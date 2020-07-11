@@ -40,10 +40,10 @@ object Preprocessor {
       valuesToNull(_: DataFrame, ""),
       dropNullRows(_: DataFrame),
       dropDuplicates(_: DataFrame),
-      binning(_: DataFrame, "age", Array(0, 18, 30, 60, 100))
-      //binning(_: DataFrame, "hours-per-week", Array(0, 25, 40, 60, 100)),
-      //quantileDiscretizer(_: DataFrame, "capital-gain", 10),
-      //quantileDiscretizer(_: DataFrame, "capital-loss", 5)
+      binning(_: DataFrame, "age", Array(0, 18, 30, 60, 100)),
+      binning(_: DataFrame, "hours-per-week", Array(0, 25, 40, 60, 100)),
+      quantileDiscretizer(_: DataFrame, "capital-gain", 10),
+      quantileDiscretizer(_: DataFrame, "capital-loss", 5)
     )
     return funcs.foldLeft(data){ (r, f) => f(r) }
   }
@@ -73,7 +73,7 @@ object Preprocessor {
   /** Drops rows that contain the given value */
   def removeRowsWithValue(data: DataFrame, value: String): DataFrame = {
     val dfs = data.columns.map(c => {
-      data.filter( col(c) !== value )
+      data.filter(col(c) !== value)
     })
     return dfs.reduceRight(_ intersect _)
   }
@@ -81,37 +81,49 @@ object Preprocessor {
   /** Substitutes values matching the given one to null values in the DataFrame */
   def valuesToNull(data: DataFrame, value: String): DataFrame = {
     return applyOverColumns(
-      data, 
-      c => when(c.equalTo(value), null).otherwise(c) 
+      data, c => when(c.equalTo(value), null).otherwise(c) 
     )
   }
 
   /** Trims column names and DataFrame values */
   def trimValues(data: DataFrame): DataFrame = {
+    val dataTypes: Map[String, String] = data.dtypes.toMap
     var newData = data.columns.foldLeft(data) { 
-      (df, c) => df.withColumnRenamed(c, c.replaceAll("\\s", ""))
+      (df, c) => df.withColumnRenamed(c, c.replaceAll("\\s", "")) 
     }
-    return applyOverColumns(newData, trim)
+    return applyOverColumns(
+      newData, c => {
+        if (dataTypes(c.toString) == "string") trim(c) 
+        else c
+      }
+    )
   }
   
   /** Bins the given column values according to the defined splits */
   def binning(data: DataFrame, columnName: String, splits: Array[Double]): DataFrame = {
     val bucketizer = new Bucketizer()
       .setInputCol(columnName)
-      .setOutputCol(s"transformed${columnName.toLowerCase.capitalize}")
+      .setOutputCol(s"T${columnName}")
       .setSplits(splits)
 
-    return bucketizer.transform(data)
+    return bucketizer
+      .transform(data)
+      .drop(columnName)
+      .withColumnRenamed(s"T${columnName}", columnName)
   }
 
   /** Discretizes the given column values according to the specified number of quantiles */
   def quantileDiscretizer(data: DataFrame, columnName: String, numBuckets: Int): DataFrame = {
     val discretizer = new QuantileDiscretizer()
       .setInputCol(columnName)
-      .setOutputCol(s"transformed${columnName.toLowerCase.capitalize}")
+      .setOutputCol(s"T${columnName}")
       .setNumBuckets(numBuckets)
 
-    return discretizer.fit(data).transform(data)
+    return discretizer
+      .fit(data)
+      .transform(data)
+      .drop(columnName)
+      .withColumnRenamed(s"T${columnName}", columnName)
   }
 
 }

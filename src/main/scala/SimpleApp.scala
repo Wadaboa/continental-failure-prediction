@@ -24,8 +24,9 @@ object SimpleApp {
       .load(inputPath.orNull.toString)
 
     data.show()
-
+    println(data.printSchema())
     var newData = Preprocessor.preprocess(data)
+    println(newData.printSchema())
     newData.show()
 
     // Train each classifier
