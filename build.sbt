@@ -2,9 +2,9 @@ name := "scala-project"
 
 version := "1.0"
 
-scalaVersion := "2.11.12"
+scalaVersion := "2.12.10"
 
-val sparkVersion = "2.4.5"
+val sparkVersion = "3.0.0"
 
 libraryDependencies ++= Seq(
     "org.apache.spark" %% "spark-core" % sparkVersion,

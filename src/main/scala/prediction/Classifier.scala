@@ -14,39 +14,19 @@ abstract class Classifier(data: DataFrame) {
   var trainedModel: PipelineModel = _
   val metricName: String = "accuracy"
 
-  def getPipeline(): Pipeline = {
-    // Index labels, adding metadata to the label column
-    val labelIndexer = new StringIndexer()
-      .setInputCol("label")
-      .setOutputCol("indexedLabel")
-      .fit(data)
+  /** Defines data model-specific data transformations */
+  def getPipeline(): Pipeline
 
-    // Put every feature into a single vector
-    val vecAssembler = new VectorAssembler()
-      .setInputCols(Array())
-      .setOutputCol("features")
-
-    // Convert index labels back to original labels
-    val labelConverter = new IndexToString()
-      .setInputCol("prediction")
-      .setOutputCol("predictedLabel")
-      .setLabels(labelIndexer.labels)
-
-    // Pipeline
-    val pipeline = new Pipeline()
-      .setStages(Array(labelIndexer, vecAssembler, model, labelConverter))
-    
-    return pipeline
-  }
-
+  /** Trains the model */
   def train(): Unit = {
     trainedModel = pipeline.fit(trainingData)
   }
 
+  /** Tests the model */
   def test(): Double = {
     val predictions = trainedModel.transform(testData)
     val evaluator = new MulticlassClassificationEvaluator()
-      .setLabelCol("indexedLabel")
+      .setLabelCol("indexed-label")
       .setPredictionCol("prediction")
       .setMetricName(metricName)
     return evaluator.evaluate(predictions)

@@ -5,7 +5,6 @@ import org.apache.spark.sql.{SparkSession, DataFrame}
 object SimpleApp {
 
   def main(args: Array[String]): Unit = {
-
     // Parse command-line options
     val options = parseArgs(args)
     val inputPath = options.get("inputPath")
@@ -22,25 +21,22 @@ object SimpleApp {
       .option("header", "true")
       .option("mode", "DROPMALFORMED")
       .load(inputPath.orNull.toString)
+      .show()
 
-    data.show()
-    println(data.printSchema())
-    var newData = Preprocessor.preprocess(data)
-    println(newData.printSchema())
-    newData.show()
+    var processedData = Preprocessor.preprocess(data)
+    processedData.show()
 
     // Train each classifier
+    val classifier = new DecisionTreeClassifier(processedData)
+    classifier.train()
     /*
     classifierName match {
       case Some(value) => Classifier.train(data, value)
       case _ => sys.exit(1)
-    }
-    */
-    
+    }*/
     
     // Stop SparkSession execution
     spark.stop()
-  
   }
 
   def parseArgs(args: Array[String]): Map[String, String] = {
