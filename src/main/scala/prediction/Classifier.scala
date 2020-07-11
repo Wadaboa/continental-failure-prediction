@@ -1,34 +1,20 @@
 package prediction
 
-import scala.collection.mutable.HashMap
-
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.ml.{Pipeline, PipelineStage}
+import org.apache.spark.ml.{Pipeline, PipelineStage, PipelineModel}
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorAssembler}
-import org.apache.spark.ml.classification.{DecisionTreeClassifier, MultilayerPerceptronClassifier}
 
 
-object Classifier {
+abstract class Classifier(data: DataFrame) {
 
-  val classifiers = HashMap(
-    "MLP" -> new MultilayerPerceptronClassifier()
-              .setLayers(Array[Int](1, 2, 3))
-              .setBlockSize(128)
-              .setMaxIter(1000)
-              .setSeed(42),
-    "DT" -> new DecisionTreeClassifier()
-              .setSeed(42)
-  )
+  val model: PipelineStage
+  val Array(trainingData, testData) = data.randomSplit(Array(0.8, 0.2), seed=getRandomSeed())
+  val pipeline = getPipeline()
+  var trainedModel: PipelineModel = _
+  val metricName: String = "accuracy"
 
-  def train(data: DataFrame, classifierName: String): Unit = {
-    
-    // Get the classifier from the list of available ones
-    val classifier = classifiers.getOrElse(
-      classifierName, 
-      sys.error(s"Classifier not available. Please, select from ${classifiers.keySet}.")
-    )
-
+  def getPipeline(): Pipeline = {
     // Index labels, adding metadata to the label column
     val labelIndexer = new StringIndexer()
       .setInputCol("label")
@@ -39,11 +25,6 @@ object Classifier {
     val vecAssembler = new VectorAssembler()
       .setInputCols(Array())
       .setOutputCol("features")
-      .fit(data)
-
-    // Split the data into training and test sets (30% held out for testing)
-    val Array(trainingData, testData) = data.randomSplit(Array(0.8, 0.2), seed=42)
-    println(f"There are ${trainingData.count} rows in the training set, and ${testData.count} in the test set.")
 
     // Convert index labels back to original labels
     val labelConverter = new IndexToString()
@@ -53,22 +34,22 @@ object Classifier {
 
     // Pipeline
     val pipeline = new Pipeline()
-      .setStages(Array(labelIndexer, vecAssembler, classifier, labelConverter))
+      .setStages(Array(labelIndexer, vecAssembler, model, labelConverter))
+    
+    return pipeline
+  }
 
-    // Train model
-    val model = pipeline.fit(trainingData)
+  def train(): Unit = {
+    trainedModel = pipeline.fit(trainingData)
+  }
 
-    // Make predictions
-    val predictions = model.transform(testData)
-
-    // Select (prediction, true label) and compute test error
+  def test(): Double = {
+    val predictions = trainedModel.transform(testData)
     val evaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("indexedLabel")
       .setPredictionCol("prediction")
-      .setMetricName("precision")
-    val accuracy = evaluator.evaluate(predictions)
-    println(s"Test error: ${(1.0 - accuracy)}")
-
+      .setMetricName(metricName)
+    return evaluator.evaluate(predictions)
   }
   
 }

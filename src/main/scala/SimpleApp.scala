@@ -1,5 +1,5 @@
 import preprocessing.Preprocessor
-import prediction.Classifier
+import prediction.{Classifier, DecisionTreeClassifier}
 import org.apache.spark.sql.{SparkSession, DataFrame}
 
 object SimpleApp {
@@ -15,17 +15,26 @@ object SimpleApp {
     val spark = SparkSession.builder.appName("Simple Application").getOrCreate()
 
     // Read DataFrame
-    val df = spark.read
-         .format("csv")
-         .option("header", "true")
-         .option("mode", "DROPMALFORMED")
-         .load(inputPath.orNull.toString)
+    val data = spark.read
+      .schema(Preprocessor.getSchema())
+      .format("csv")
+      .option("delimiter", ",")
+      .option("header", "true")
+      .option("mode", "DROPMALFORMED")
+      .load(inputPath.orNull.toString)
+
+    data.show()
+
+    var newData = Preprocessor.preprocess(data)
+    newData.show()
 
     // Train each classifier
+    /*
     classifierName match {
-      case Some(value) => Classifier.train(df, value)
+      case Some(value) => Classifier.train(data, value)
       case _ => sys.exit(1)
     }
+    */
     
     
     // Stop SparkSession execution
