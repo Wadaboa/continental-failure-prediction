@@ -1,13 +1,14 @@
 package prediction
 
+import preprocessing.Dataset
+
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.{Pipeline, PipelineStage, PipelineModel}
 import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorAssembler}
 import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
-import preprocessing.Preprocessor
 
 
-class DecisionTreeClassifier(data: DataFrame) extends Classifier(data) {
+class DecisionTreeClassifier(dataset: Dataset) extends Classifier(dataset) {
 
   override val model = new DT()
     .setImpurity("entropy")
@@ -34,13 +35,13 @@ class DecisionTreeClassifier(data: DataFrame) extends Classifier(data) {
     val columnsIndexer = new StringIndexer()
         .setInputCols(toIndex)
         .setOutputCols(toIndex.map("indexed" + _))
-        .fit(data)
+        .fit(dataset.getData())
 
     // Index labels
     val labelIndexer = new StringIndexer()
-        .setInputCol(Preprocessor.getTargetColumnNames()(0))
+        .setInputCol(dataset.getTargetColumnNames()(0))
         .setOutputCol("label")
-        .fit(data)
+        .fit(dataset.getData())
     
     // Put every feature into a single vector
     val featuresAssembler = new VectorAssembler()

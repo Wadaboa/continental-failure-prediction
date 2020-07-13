@@ -1,6 +1,8 @@
-import preprocessing.Preprocessor
-import prediction.{Classifier, DecisionTreeClassifier}
+import preprocessing.{AdultDataset}
+import prediction.{Classifier}
+
 import org.apache.spark.sql.{SparkSession, DataFrame}
+
 
 object SimpleApp {
 
@@ -15,7 +17,7 @@ object SimpleApp {
 
     // Read DataFrame
     val data = spark.read
-      .schema(Preprocessor.getSchema())
+      .schema(AdultDataset.getSchema())
       .format("csv")
       .option("delimiter", ",")
       .option("header", "true")
@@ -23,20 +25,15 @@ object SimpleApp {
       .load(inputPath.orNull.toString)
     data.show()
 
-    // Preprocess data
-    var processedData = Preprocessor.preprocess(data)
-    processedData.show()
+    // Create Dataset object (and preprocess data)
+    val dataset = new AdultDataset(data)
+    dataset.getData().show()
 
     // Train the classifier and test it
-    val classifier = new DecisionTreeClassifier(processedData)
+    val classifier = Classifier(classifierName.orNull.toString, dataset)
     classifier.train()
     val result = classifier.test()
     println(result)
-    /*
-    classifierName match {
-      case Some(value) => Classifier.train(data, value)
-      case _ => sys.exit(1)
-    }*/
     
     // Stop SparkSession execution
     spark.stop()

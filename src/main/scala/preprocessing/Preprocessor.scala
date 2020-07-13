@@ -1,7 +1,5 @@
 package preprocessing
 
-import org.apache.spark.ml.{Pipeline, PipelineStage}
-import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 import org.apache.spark.ml.feature.{QuantileDiscretizer, Bucketizer}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Column
@@ -9,79 +7,7 @@ import org.apache.spark.sql.functions.{trim, when, length, col}
 
 
 object Preprocessor {
-
-  /** Returns the dataset schema, to be used in reading operations */
-  def getSchema(): String = {
-    return """
-      `age` INT,
-      `workclass` STRING,
-      `fnlwgt` INT,
-      `education` STRING,
-      `education-num` INT,
-      `marital-status` STRING,
-      `occupation` STRING,
-      `relationship` STRING,
-      `race` STRING,
-      `sex` STRING,
-      `capital-gain` INT,
-      `capital-loss` INT,
-      `hours-per-week` INT,
-      `native-country` STRING,
-      `high-income` STRING
-    """
-  }
-
-  /** Specifies discrete columns */
-  def getDiscreteColumnNames(): Array[String] = {
-    return Array(
-      "age",
-      "workclass", 
-      "education", 
-      "marital-status", 
-      "occupation", 
-      "relationship", 
-      "race", 
-      "sex",
-      "hours-per-week",
-      "native-country",
-    )
-  }
-
-  /** Specifies continuos columns */
-  def getContinuosColumnNames(): Array[String] = {
-    return Array(
-      "capital-gain",
-      "capital-loss"
-    )
-  }
-
-  /** Specifies target columns  */
-  def getTargetColumnNames(): Array[String] = {
-    return Array("high-income")
-  }
-
-  /** Get useful column names */
-  def getColumnNames(): Array[String] = {
-    return getDiscreteColumnNames() ++ getContinuosColumnNames() ++ getTargetColumnNames()
-  }
-
-  /** Applies each and every pre-processing function to the given DataFrame */
-  def preprocess(data: DataFrame): DataFrame = {
-    val funcs = Seq(
-      trimValues(_: DataFrame),
-      maintainColumns(_: DataFrame, getColumnNames()),
-      valuesToNull(_: DataFrame, "?"),
-      valuesToNull(_: DataFrame, ""),
-      dropNullRows(_: DataFrame),
-      dropDuplicates(_: DataFrame),
-      binning(_: DataFrame, "age", Array(0, 18, 30, 60, 100)),
-      binning(_: DataFrame, "hours-per-week", Array(0, 25, 40, 60, 100)),
-      quantileDiscretizer(_: DataFrame, "capital-gain", 10),
-      quantileDiscretizer(_: DataFrame, "capital-loss", 5)
-    )
-    return funcs.foldLeft(data){ (r, f) => f(r) }
-  }
-
+  
   /** Drops duplicated rows in the DataFrame */
   def dropDuplicates(data: DataFrame): DataFrame = {
     return data.dropDuplicates()
