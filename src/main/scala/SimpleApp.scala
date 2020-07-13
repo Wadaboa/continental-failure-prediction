@@ -21,14 +21,17 @@ object SimpleApp {
       .option("header", "true")
       .option("mode", "DROPMALFORMED")
       .load(inputPath.orNull.toString)
-      .show()
+    data.show()
 
+    // Preprocess data
     var processedData = Preprocessor.preprocess(data)
     processedData.show()
 
-    // Train each classifier
+    // Train the classifier and test it
     val classifier = new DecisionTreeClassifier(processedData)
     classifier.train()
+    val result = classifier.test()
+    println(result)
     /*
     classifierName match {
       case Some(value) => Classifier.train(data, value)

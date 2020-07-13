@@ -14,7 +14,7 @@ abstract class Classifier(data: DataFrame) {
   var trainedModel: PipelineModel = _
   val metricName: String = "accuracy"
 
-  /** Defines data model-specific data transformations */
+  /** Defines model-specific data transformations */
   def getPipeline(): Pipeline
 
   /** Trains the model */
@@ -26,7 +26,7 @@ abstract class Classifier(data: DataFrame) {
   def test(): Double = {
     val predictions = trainedModel.transform(testData)
     val evaluator = new MulticlassClassificationEvaluator()
-      .setLabelCol("indexed-label")
+      .setLabelCol("label")
       .setPredictionCol("prediction")
       .setMetricName(metricName)
     return evaluator.evaluate(predictions)

@@ -31,11 +31,45 @@ object Preprocessor {
     """
   }
 
+  /** Specifies discrete columns */
+  def getDiscreteColumnNames(): Array[String] = {
+    return Array(
+      "age",
+      "workclass", 
+      "education", 
+      "marital-status", 
+      "occupation", 
+      "relationship", 
+      "race", 
+      "sex",
+      "hours-per-week",
+      "native-country",
+    )
+  }
+
+  /** Specifies continuos columns */
+  def getContinuosColumnNames(): Array[String] = {
+    return Array(
+      "capital-gain",
+      "capital-loss"
+    )
+  }
+
+  /** Specifies target columns  */
+  def getTargetColumnNames(): Array[String] = {
+    return Array("high-income")
+  }
+
+  /** Get useful column names */
+  def getColumnNames(): Array[String] = {
+    return getDiscreteColumnNames() ++ getContinuosColumnNames() ++ getTargetColumnNames()
+  }
+
   /** Applies each and every pre-processing function to the given DataFrame */
   def preprocess(data: DataFrame): DataFrame = {
     val funcs = Seq(
       trimValues(_: DataFrame),
-      dropColumns(_: DataFrame, "fnlwgt", "education-num"),
+      maintainColumns(_: DataFrame, getColumnNames()),
       valuesToNull(_: DataFrame, "?"),
       valuesToNull(_: DataFrame, ""),
       dropNullRows(_: DataFrame),
@@ -56,6 +90,12 @@ object Preprocessor {
   /** Drops the given list of columns */
   def dropColumns(data: DataFrame, toDrop: String*): DataFrame = {
     return data.drop(toDrop: _*)
+  }
+
+  /** Maintains only the given list of columns */
+  def maintainColumns(data: DataFrame, toMaintain: Array[String]): DataFrame = {
+    val toDrop = data.columns.filterNot(c => toMaintain.contains(c))
+    return dropColumns(data, toDrop: _*)
   }
   
   /** Drops rows that contain at least one null value */
