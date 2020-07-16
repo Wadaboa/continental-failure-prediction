@@ -1,2 +1,6 @@
-target
+target/
 *.class
+.ammonite/
+.bloop/
+.metals/
+project/metals.sbt

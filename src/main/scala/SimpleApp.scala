@@ -3,7 +3,6 @@ import prediction.{Classifier}
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
 
-
 object SimpleApp {
 
   def main(args: Array[String]): Unit = {
@@ -30,11 +29,12 @@ object SimpleApp {
     dataset.getData().show()
 
     // Train the classifier and test it
-    val classifier = Classifier(classifierName.orNull.toString, dataset)
+    val classifier =
+      Classifier(classifierName.orNull.toString, dataset, AdultDataset)
     classifier.train()
     val result = classifier.test()
     println(result)
-    
+
     // Stop SparkSession execution
     spark.stop()
   }
@@ -47,15 +47,18 @@ object SimpleApp {
     val arglist = args.toList
 
     // Parse options
-    def nextOption(map: Map[String, String], list: List[String]): Map[String, String] = {
+    def nextOption(
+        map: Map[String, String],
+        list: List[String]
+    ): Map[String, String] = {
       list match {
         case Nil => map
-        case "--input-path" :: value :: tail => 
+        case "--input-path" :: value :: tail =>
           nextOption(map ++ Map("inputPath" -> value), tail)
-        case "--classifier-name" :: value :: tail => 
+        case "--classifier-name" :: value :: tail =>
           nextOption(map ++ Map("classifierName" -> value), tail)
-        case option :: tail => 
-          println(s"Unknown option ${option}") 
+        case option :: tail =>
+          println(s"Unknown option ${option}")
           sys.exit(1)
       }
     }

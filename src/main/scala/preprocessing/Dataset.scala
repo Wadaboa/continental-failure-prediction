@@ -3,7 +3,6 @@ package preprocessing
 import org.apache.spark.sql.{DataFrame}
 import org.apache.spark.sql.types.StructType
 
-
 trait DatasetProperty {
 
   /** Specifies discrete columns */
@@ -12,7 +11,7 @@ trait DatasetProperty {
   /** Specifies continuos columns */
   def getContinuosColumnNames(): Array[String]
 
-  /** Specifies target columns  */
+  /** Specifies target columns */
   def getTargetColumnNames(): Array[String]
 
   /** Get useful column names */
@@ -28,23 +27,7 @@ trait DatasetProperty {
 
 }
 
-trait ReflectionCompanion {
-
-  import scala.reflect.runtime._
-
-  def companionOf[T](implicit tt: TypeTag[T]) = {
-    val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
-    var classSymbol = rootMirror.classSymbol(getClass)
-    val classMirror = rootMirror.reflectClass(classSymbol)
-    val moduleMirror = classMirror.companion.get
-    moduleMirror.instance.asInstanceOf[T]
-  }
-
-}
-
-abstract class Dataset(data: DataFrame) extends ReflectionCompanion {
-  
-  def companion = companionOf[Dataset]
+abstract class Dataset(data: DataFrame) {
 
   /** Applies a sequence of pre-processing functions to the given DataFrame */
   def preprocess(): DataFrame
