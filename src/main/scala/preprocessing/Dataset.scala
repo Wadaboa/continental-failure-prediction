@@ -1,6 +1,6 @@
 package preprocessing
 
-import org.apache.spark.sql.{DataFrame}
+import org.apache.spark.sql.{SparkSession, DataFrame, DataFrameReader}
 import org.apache.spark.sql.types.StructType
 
 trait DatasetProperty {
@@ -15,34 +15,52 @@ trait DatasetProperty {
   def getTargetColumnNames(): Array[String]
 
   /** Get useful column names */
-  def getColumnNames(): Array[String]
+  def getColumnNames(): Array[String] = {
+    return getDiscreteColumnNames() ++ getContinuosColumnNames() ++ getTargetColumnNames()
+  }
 
   /** Returns the dataset schema string */
-  def getSchemaString(): String
+  def getSchemaString(): String = null
 
   /** Returns the dataset schema */
   def getSchema(): StructType = {
-    return StructType.fromDDL(getSchemaString())
+    val schemaString = getSchemaString()
+    if (schemaString != null) return StructType.fromDDL(getSchemaString())
+    return null
+  }
+
+  /** Loads the dataset */
+  def load(inputPath: String): DataFrame = {
+    // Prepare the DataFrameReader
+    var reader: DataFrameReader = SparkSession.builder
+      .getOrCreate()
+      .read
+
+    // Check if a schema is provided (otherwise try to infer it)
+    val schema = getSchema()
+    if (schema != null) reader = reader.schema(schema)
+    else reader = reader.option("inferSchema", "true")
+
+    // Load the dataset
+    return reader
+      .format("csv")
+      .option("delimiter", ",")
+      .option("header", "true")
+      .option("mode", "DROPMALFORMED")
+      .load(inputPath)
   }
 
 }
 
-abstract class Dataset(data: DataFrame) {
+abstract class Dataset(inputPath: String) {
 
-  /** Store the companion object */
+  /** Stores the companion object */
   def property: DatasetProperty
 
-  /** Check the schema and pre-process the dataset */
-  if (!data.schema.equals(property.getSchema()))
-    throw new IllegalArgumentException(
-      "The given DataFrame does not respect the defined schema."
-    )
-  preprocess()
+  /** Loads the dataset */
+  val data: DataFrame = property.load(inputPath)
 
   /** Applies a sequence of pre-processing functions to the given DataFrame */
   def preprocess(): DataFrame
-
-  /** Data accessor */
-  def getData(): DataFrame = data
 
 }

@@ -41,13 +41,13 @@ class DecisionTreeClassifier(dataset: Dataset) extends Classifier[DT](dataset) {
     val columnsIndexer = new StringIndexer()
       .setInputCols(toIndex)
       .setOutputCols(toIndex.map("indexed" + _))
-      .fit(dataset.getData())
+      .fit(dataset.data)
 
     // Index labels
     val labelIndexer = new StringIndexer()
       .setInputCol(dataset.property.getTargetColumnNames()(0))
       .setOutputCol("label")
-      .fit(dataset.getData())
+      .fit(dataset.data)
 
     // Put every feature into a single vector
     val featuresAssembler = new VectorAssembler()

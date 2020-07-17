@@ -2,59 +2,25 @@ package preprocessing
 
 import org.apache.spark.sql.{DataFrame}
 
-object AdultDataset extends DatasetProperty {
+object BoschDataset extends DatasetProperty {
 
   override def getDiscreteColumnNames(): Array[String] = {
-    return Array(
-      "age",
-      "workclass",
-      "education",
-      "marital-status",
-      "occupation",
-      "relationship",
-      "race",
-      "sex",
-      "hours-per-week",
-      "native-country"
-    )
+    return Array()
   }
 
   override def getContinuosColumnNames(): Array[String] = {
-    return Array(
-      "capital-gain",
-      "capital-loss"
-    )
+    return Array()
   }
 
   override def getTargetColumnNames(): Array[String] = {
-    return Array("high-income")
-  }
-
-  override def getSchemaString(): String = {
-    return """
-      `age` INT,
-      `workclass` STRING,
-      `fnlwgt` INT,
-      `education` STRING,
-      `education-num` INT,
-      `marital-status` STRING,
-      `occupation` STRING,
-      `relationship` STRING,
-      `race` STRING,
-      `sex` STRING,
-      `capital-gain` INT,
-      `capital-loss` INT,
-      `hours-per-week` INT,
-      `native-country` STRING,
-      `high-income` STRING
-    """
+    return Array("Response")
   }
 
 }
 
-class AdultDataset(inputPath: String) extends Dataset(inputPath) {
+class BoschDataset(inputPath: String) extends Dataset(inputPath) {
 
-  override def property = AdultDataset
+  override def property = BoschDataset
 
   override def preprocess(): DataFrame = {
     val funcs = Seq(

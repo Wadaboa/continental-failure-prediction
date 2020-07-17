@@ -3,7 +3,7 @@ import prediction.{Classifier}
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
 
-object SimpleApp {
+object PerformanceEvaluator {
 
   def main(args: Array[String]): Unit = {
     // Parse command-line options
@@ -12,21 +12,16 @@ object SimpleApp {
     val classifierName = options.get("classifierName")
 
     // Create SparkSession object
-    val spark = SparkSession.builder.appName("Simple Application").getOrCreate()
+    val spark =
+      SparkSession.builder.appName("Production line performance").getOrCreate()
 
-    // Read DataFrame
-    val data = spark.read
-      .schema(AdultDataset.getSchema())
-      .format("csv")
-      .option("delimiter", ",")
-      .option("header", "true")
-      .option("mode", "DROPMALFORMED")
-      .load(inputPath.orNull.toString)
-    data.show()
+    // Create Dataset object (and read data)
+    val dataset = new AdultDataset(inputPath.orNull.toString)
+    dataset.data.show()
 
-    // Create Dataset object (and preprocess data)
-    val dataset = new AdultDataset(data)
-    dataset.getData().show()
+    // Preprocess data
+    dataset.preprocess()
+    dataset.data.show()
 
     // Train the classifier and test it
     val classifier = Classifier(classifierName.orNull.toString, dataset)
