@@ -29,6 +29,16 @@ trait DatasetProperty {
 
 abstract class Dataset(data: DataFrame) {
 
+  /** Store the companion object */
+  def property: DatasetProperty
+
+  /** Check the schema and pre-process the dataset */
+  if (!data.schema.equals(property.getSchema()))
+    throw new IllegalArgumentException(
+      "The given DataFrame does not respect the defined schema."
+    )
+  preprocess()
+
   /** Applies a sequence of pre-processing functions to the given DataFrame */
   def preprocess(): DataFrame
 

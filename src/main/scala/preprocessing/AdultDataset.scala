@@ -58,18 +58,12 @@ object AdultDataset extends DatasetProperty {
 
 class AdultDataset(data: DataFrame) extends Dataset(data) {
 
-  import AdultDataset._
-
-  if (!data.schema.equals(getSchema()))
-    throw new IllegalArgumentException(
-      "The given DataFrame does not respect the defined schema."
-    )
-  preprocess()
+  override def property = AdultDataset
 
   override def preprocess(): DataFrame = {
     val funcs = Seq(
       Preprocessor.trimValues(_: DataFrame),
-      Preprocessor.maintainColumns(_: DataFrame, getColumnNames()),
+      Preprocessor.maintainColumns(_: DataFrame, property.getColumnNames()),
       Preprocessor.valuesToNull(_: DataFrame, "?"),
       Preprocessor.valuesToNull(_: DataFrame, ""),
       Preprocessor.dropNullRows(_: DataFrame),

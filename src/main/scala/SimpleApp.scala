@@ -29,8 +29,7 @@ object SimpleApp {
     dataset.getData().show()
 
     // Train the classifier and test it
-    val classifier =
-      Classifier(classifierName.orNull.toString, dataset, AdultDataset)
+    val classifier = Classifier(classifierName.orNull.toString, dataset)
     classifier.train()
     val result = classifier.test()
     println(result)

@@ -1,6 +1,6 @@
 package prediction
 
-import preprocessing.{Dataset, DatasetProperty}
+import preprocessing.{Dataset}
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.{Pipeline, PipelineStage, PipelineModel}
@@ -11,10 +11,7 @@ import org.apache.spark.ml.feature.{
 }
 import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
 
-class DecisionTreeClassifier(
-    dataset: Dataset,
-    datasetProperty: DatasetProperty
-) extends Classifier[DT](dataset, datasetProperty) {
+class DecisionTreeClassifier(dataset: Dataset) extends Classifier[DT](dataset) {
 
   override def getModel(): DT = {
     return new DT()
@@ -24,6 +21,7 @@ class DecisionTreeClassifier(
       .setLabelCol("label")
       .setFeaturesCol("features")
       .setPredictionCol("prediction")
+      .setMaxBins(64)
   }
 
   override def getPipeline(): Pipeline = {
@@ -47,7 +45,7 @@ class DecisionTreeClassifier(
 
     // Index labels
     val labelIndexer = new StringIndexer()
-      .setInputCol(datasetProperty.getTargetColumnNames()(0))
+      .setInputCol(dataset.property.getTargetColumnNames()(0))
       .setOutputCol("label")
       .fit(dataset.getData())
 
