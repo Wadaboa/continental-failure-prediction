@@ -1,0 +1,19 @@
+provider: ec2
+
+services:
+  spark:
+    version: 3.0.0
+
+launch:
+  num-slaves: 1
+  install-spark: True
+
+providers:
+  ec2:
+    key-name: my-key-pair
+    identity-file: my-key-pair.pem
+    instance-type: m4.large
+    region: us-east-1
+    ami: ami-00b882ac5193044e4
+    user: ec2-user
+    instance-profile-name: ec2-s3

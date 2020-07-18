@@ -1,7 +1,8 @@
-import preprocessing.{AdultDataset}
+import preprocessing.{BoschDataset}
 import prediction.{Classifier}
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
+import preprocessing.Preprocessor
 
 object PerformanceEvaluator {
 
@@ -16,18 +17,20 @@ object PerformanceEvaluator {
       SparkSession.builder.appName("Production line performance").getOrCreate()
 
     // Create Dataset object (and read data)
-    val dataset = new AdultDataset(inputPath.orNull.toString)
+    val dataset = new BoschDataset(inputPath.orNull.toString)
     dataset.data.show()
 
     // Preprocess data
     dataset.preprocess()
     dataset.data.show()
 
+    /*
     // Train the classifier and test it
     val classifier = Classifier(classifierName.orNull.toString, dataset)
     classifier.train()
     val result = classifier.test()
     println(result)
+     */
 
     // Stop SparkSession execution
     spark.stop()

@@ -25,8 +25,8 @@ object Classifier {
 
 abstract class Classifier[M <: PipelineStage](dataset: Dataset) {
 
-  val Array(trainingData, testData) =
-    dataset.data.randomSplit(Array(0.8, 0.2), seed = getRandomSeed())
+  val Array(trainingData, validationData, testData) =
+    dataset.data.randomSplit(Array(0.5, 0.3, 0.2), seed = getRandomSeed())
   val metricName: String = "accuracy"
   val model: M = getModel()
   val pipeline: Pipeline = getPipeline()

@@ -4,3 +4,5 @@ target/
 .bloop/
 .metals/
 project/metals.sbt
+*.pem
+*.env

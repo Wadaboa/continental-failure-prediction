@@ -5,6 +5,9 @@ import org.apache.spark.sql.types.StructType
 
 trait DatasetProperty {
 
+  /** CSV dataset delimiter */
+  val delimiter = ","
+
   /** Specifies discrete columns */
   def getDiscreteColumnNames(): Array[String]
 
@@ -44,7 +47,7 @@ trait DatasetProperty {
     // Load the dataset
     return reader
       .format("csv")
-      .option("delimiter", ",")
+      .option("delimiter", delimiter)
       .option("header", "true")
       .option("mode", "DROPMALFORMED")
       .load(inputPath)
