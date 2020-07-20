@@ -9,9 +9,16 @@ import org.apache.spark.ml.feature.{
   StringIndexer,
   VectorAssembler
 }
+import org.apache.spark.ml.evaluation.{
+  Evaluator,
+  MulticlassClassificationEvaluator
+}
 import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
 
-class DecisionTreeClassifier(dataset: Dataset) extends Classifier[DT](dataset) {
+class DecisionTreeClassifier(dataset: Dataset, split: Boolean = true)
+    extends Predictor[DT](dataset, split) {
+
+  override val metricName: String = "accuracy"
 
   override def getModel(): DT = {
     return new DT()
@@ -73,6 +80,13 @@ class DecisionTreeClassifier(dataset: Dataset) extends Classifier[DT](dataset) {
       )
 
     return pipeline
+  }
+
+  def getEvaluator(): Evaluator = {
+    return new MulticlassClassificationEvaluator()
+      .setLabelCol("label")
+      .setPredictionCol("prediction")
+      .setMetricName(metricName)
   }
 
 }

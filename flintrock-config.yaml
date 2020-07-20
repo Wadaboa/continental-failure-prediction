@@ -17,3 +17,5 @@ providers:
     ami: ami-00b882ac5193044e4
     user: ec2-user
     instance-profile-name: ec2-s3
+
+debug: true

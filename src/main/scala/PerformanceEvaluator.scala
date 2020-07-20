@@ -1,5 +1,5 @@
 import preprocessing.{BoschDataset}
-import prediction.{Classifier}
+import prediction.{Predictor}
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
 import preprocessing.Preprocessor
@@ -21,8 +21,8 @@ object PerformanceEvaluator {
     dataset.data.show()
 
     // Preprocess data
-    dataset.preprocess()
-    dataset.data.show()
+    val x = dataset.preprocess()
+    x.show()
 
     /*
     // Train the classifier and test it

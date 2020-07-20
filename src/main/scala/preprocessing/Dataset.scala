@@ -9,13 +9,13 @@ trait DatasetProperty {
   val delimiter = ","
 
   /** Specifies discrete columns */
-  def getDiscreteColumnNames(): Array[String]
+  def getDiscreteColumnNames(): Array[String] = Array()
 
   /** Specifies continuos columns */
-  def getContinuosColumnNames(): Array[String]
+  def getContinuosColumnNames(): Array[String] = Array()
 
   /** Specifies target columns */
-  def getTargetColumnNames(): Array[String]
+  def getTargetColumnNames(): Array[String] = Array()
 
   /** Get useful column names */
   def getColumnNames(): Array[String] = {
@@ -55,13 +55,25 @@ trait DatasetProperty {
 
 }
 
-abstract class Dataset(inputPath: String) {
+object Dataset {
+
+  def apply(inputPath: String): Dataset = {
+    val dataset = new Dataset(Some(inputPath))
+    dataset.data = dataset.property.load(inputPath.orNull.toString)
+  }
+
+  def apply(data: Option[DataFrame]): Dataset = {
+    val dataset = new Dataset
+    dataset.data = data
+    return dataset
+  }
+
+}
+
+class Dataset private (data: DataFrame) {
 
   /** Stores the companion object */
   def property: DatasetProperty
-
-  /** Loads the dataset */
-  val data: DataFrame = property.load(inputPath)
 
   /** Applies a sequence of pre-processing functions to the given DataFrame */
   def preprocess(): DataFrame

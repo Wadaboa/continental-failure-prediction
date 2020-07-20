@@ -33,4 +33,13 @@ class BoschDataset(inputPath: String) extends Dataset(inputPath) {
     return funcs.foldLeft(data) { (r, f) => f(r) }
   }
 
+  def preprocessForClustering(): DataFrame = {
+    val funcs = Seq(
+      Preprocessor.dropColumns(_: DataFrame, "Id"),
+      Preprocessor.binaryConversion(_: DataFrame),
+      Preprocessor.pca(_: DataFrame, 50)
+    )
+    return funcs.foldLeft(data) { (r, f) => f(r) }
+  }
+
 }

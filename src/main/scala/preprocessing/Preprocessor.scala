@@ -7,6 +7,8 @@ import org.apache.spark.ml.feature.{
   PCAModel,
   VectorAssembler
 }
+import org.apache.spark.ml.evaluation.ClusteringEvaluator
+import org.apache.spark.ml.clustering.{KMeans, KMeansModel}
 import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Column
@@ -131,6 +133,29 @@ object Preprocessor {
         transformer(col(featuresCol))
       )
       .select(pcaFeaturesCol)
+  }
+
+  /** Clusters data using k-means, by automatically selecting the best number of clusters */
+  def cluster(
+      data: DataFrame,
+      maxClusters: Integer,
+      assemble: Boolean = true
+  ): KMeansModel = {
+    val evaluator = new ClusteringEvaluator()
+    var best_model: KMeansModel = null
+    var best_silhouette: Double = -1
+    var best_k: Integer = 1
+    for (k <- 1 to maxClusters) {
+      var model = new KMeans().setK(k).fit(data)
+      var predictions = model.transform(data)
+      var silhouette = evaluator.evaluate(predictions)
+      if (silhouette > best_silhouette) {
+        best_silhouette = silhouette
+        best_k = k
+        best_model = model
+      }
+    }
+    return best_model
   }
 
   /** Bins the given column values according to the defined splits */
