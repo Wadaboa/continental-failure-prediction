@@ -9,7 +9,6 @@ import org.apache.spark.ml.clustering.{KMeans => KM, KMeansModel => KMM}
 class KMeansClusterer(dataset: Dataset) extends Clusterer[KM, KMM](dataset) {
 
   override val metricName: String = "silhouette"
-  val maxClusters: Integer = dataset.getNumRows()
 
   override def train(): Unit = {
     var bestSilhouette: Double = -1

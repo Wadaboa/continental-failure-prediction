@@ -23,6 +23,7 @@ object Clusterer {
 
 abstract class Clusterer[T <: Estimator[M], M <: Model[M]](dataset: Dataset) {
 
+  val maxClusters: Integer = dataset.getNumRows()
   var model: T = getModel()
   var trainedModel: M = _
   val metricName: String

@@ -21,11 +21,13 @@ object PerformanceEvaluator {
     dataset.data.show()
 
     // Preprocess data
-    val toCluster = dataset.preprocessForClustering()
-    toCluster.show()
+    val toCluster = new BoschDataset(
+      inputData = Some(dataset.preprocessForClustering())
+    )
+    toCluster.data.show()
 
     // Cluster data and print centroids
-    val kmeans = Clusterer("KM", dataset)
+    val kmeans = Clusterer("KM", toCluster)
     kmeans.train()
     println(kmeans.trainedModel)
     //.clusterCenters.foreach(println)
