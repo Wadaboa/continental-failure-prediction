@@ -54,7 +54,7 @@ object AdultDataset extends DatasetProperty {
 
 class AdultDataset(
     inputPath: Option[String] = None,
-    var inputData: Option[DataFrame] = None
+    inputData: Option[DataFrame] = None
 ) extends Dataset(inputPath, inputData) {
 
   override def property = AdultDataset

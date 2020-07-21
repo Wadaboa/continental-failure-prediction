@@ -6,20 +6,19 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.evaluation.{Evaluator, ClusteringEvaluator}
 import org.apache.spark.ml.clustering.{KMeans => KM, KMeansModel => KMM}
 
-class KMeansClusterer(dataset: Dataset, split: Boolean = false)
-    extends Predictor[KM](dataset, split) {
+class KMeansClusterer(dataset: Dataset) extends Clusterer[KM, KMM](dataset) {
 
   override val metricName: String = "silhouette"
   val maxClusters: Integer = dataset.getNumRows()
 
-  override def runValidation(): Unit = {
+  override def train(): Unit = {
     var bestSilhouette: Double = -1
     var bestModel: KM = null
     var bestTrainedModel: KMM = null
     for (k <- 1 to maxClusters) {
       var tempModel = new KM().setK(k)
-      var tempTrainedModel = tempModel.fit(getTrainingData())
-      var silhouette = evaluate(tempTrainedModel.transform(getTestData()))
+      var tempTrainedModel = tempModel.fit(dataset.data)
+      var silhouette = evaluate(tempTrainedModel.transform(dataset.data))
       if (silhouette > bestSilhouette) {
         bestModel = tempModel
         bestTrainedModel = tempTrainedModel

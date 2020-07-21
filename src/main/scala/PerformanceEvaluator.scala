@@ -1,5 +1,5 @@
 import preprocessing.{BoschDataset}
-import prediction.{Predictor}
+import prediction.{Predictor, Clusterer}
 
 import org.apache.spark.sql.{SparkSession, DataFrame}
 import preprocessing.Preprocessor
@@ -25,9 +25,10 @@ object PerformanceEvaluator {
     toCluster.show()
 
     // Cluster data and print centroids
-    val kmeans = Predictor("KM", dataset)
-    kmeans.cluster()
-    kmeans.trainedModel.clusterCenters.foreach(println)
+    val kmeans = Clusterer("KM", dataset)
+    kmeans.train()
+    println(kmeans.trainedModel)
+    //.clusterCenters.foreach(println)
 
     /*
     // Train the classifier and test it

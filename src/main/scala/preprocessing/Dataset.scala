@@ -28,7 +28,7 @@ trait DatasetProperty {
   /** Returns the dataset schema */
   def getSchema(): Option[StructType] = {
     getSchemaString() match {
-      case Some(schemaString) => return StructType.fromDDL(schemaString)
+      case Some(schemaString) => return Some(StructType.fromDDL(schemaString))
       case None               => None
     }
   }
@@ -59,14 +59,14 @@ trait DatasetProperty {
 
 abstract class Dataset(
     inputPath: Option[String] = None,
-    var inputData: Option[DataFrame] = None
+    inputData: Option[DataFrame] = None
 ) {
 
   /** Stores the companion object */
   def property: DatasetProperty
 
   /** Loads data */
-  var data: DataFrame
+  var data: DataFrame = _
   inputPath match {
     case Some(value) => data = property.load(value)
     case None => {

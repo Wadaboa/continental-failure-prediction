@@ -15,8 +15,7 @@ import org.apache.spark.ml.evaluation.{
 }
 import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
 
-class DecisionTreeClassifier(dataset: Dataset, split: Boolean = true)
-    extends Predictor[DT](dataset, split) {
+class DecisionTreeClassifier(dataset: Dataset) extends Predictor[DT](dataset) {
 
   override val metricName: String = "accuracy"
 

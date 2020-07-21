@@ -14,14 +14,14 @@ object BoschDataset extends DatasetProperty {
 
 class BoschDataset(
     inputPath: Option[String] = None,
-    var inputData: Option[DataFrame] = None
+    inputData: Option[DataFrame] = None
 ) extends Dataset(inputPath, inputData) {
 
   override def property = BoschDataset
 
   override def preprocess(): DataFrame = { return null }
 
-  override def preprocessForClustering(): DataFrame = {
+  def preprocessForClustering(): DataFrame = {
     val funcs = Seq(
       Preprocessor.dropColumns(_: DataFrame, "Id"),
       Preprocessor.binaryConversion(_: DataFrame),
