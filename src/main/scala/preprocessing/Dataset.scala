@@ -18,18 +18,19 @@ trait DatasetProperty {
   def getTargetColumnNames(): Array[String] = Array()
 
   /** Get useful column names */
-  def getColumnNames(): Array[String] = {
+  def getUsefulColumnNames(): Array[String] = {
     return getDiscreteColumnNames() ++ getContinuosColumnNames() ++ getTargetColumnNames()
   }
 
   /** Returns the dataset schema string */
-  def getSchemaString(): String = null
+  def getSchemaString(): Option[String] = None
 
   /** Returns the dataset schema */
-  def getSchema(): StructType = {
-    val schemaString = getSchemaString()
-    if (schemaString != null) return StructType.fromDDL(getSchemaString())
-    return null
+  def getSchema(): Option[StructType] = {
+    getSchemaString() match {
+      case Some(schemaString) => return StructType.fromDDL(schemaString)
+      case None               => None
+    }
   }
 
   /** Loads the dataset */
@@ -40,9 +41,10 @@ trait DatasetProperty {
       .read
 
     // Check if a schema is provided (otherwise try to infer it)
-    val schema = getSchema()
-    if (schema != null) reader = reader.schema(schema)
-    else reader = reader.option("inferSchema", "true")
+    getSchema() match {
+      case Some(schema) => reader = reader.schema(schema)
+      case None         => reader = reader.option("inferSchema", "true")
+    }
 
     // Load the dataset
     return reader
@@ -55,27 +57,36 @@ trait DatasetProperty {
 
 }
 
-object Dataset {
-
-  def apply(inputPath: String): Dataset = {
-    val dataset = new Dataset(Some(inputPath))
-    dataset.data = dataset.property.load(inputPath.orNull.toString)
-  }
-
-  def apply(data: Option[DataFrame]): Dataset = {
-    val dataset = new Dataset
-    dataset.data = data
-    return dataset
-  }
-
-}
-
-class Dataset private (data: DataFrame) {
+abstract class Dataset(
+    inputPath: Option[String] = None,
+    var inputData: Option[DataFrame] = None
+) {
 
   /** Stores the companion object */
   def property: DatasetProperty
 
+  /** Loads data */
+  var data: DataFrame
+  inputPath match {
+    case Some(value) => data = property.load(value)
+    case None => {
+      inputData match {
+        case Some(value) => data = value
+        case None =>
+          throw new IllegalArgumentException(
+            "Either inputhPath or data should be given."
+          )
+      }
+    }
+  }
+
   /** Applies a sequence of pre-processing functions to the given DataFrame */
-  def preprocess(): DataFrame
+  def preprocess(): DataFrame = data
+
+  /** Returns the DataFrame's column names */
+  def getColumnNames(): Array[String] = data.columns.toArray
+
+  /** Returns the DataFrame's rows number */
+  def getNumRows(): Integer = data.count.toInt
 
 }

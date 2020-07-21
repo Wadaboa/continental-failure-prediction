@@ -17,12 +17,17 @@ object PerformanceEvaluator {
       SparkSession.builder.appName("Production line performance").getOrCreate()
 
     // Create Dataset object (and read data)
-    val dataset = new BoschDataset(inputPath.orNull.toString)
+    val dataset = new BoschDataset(inputPath = inputPath)
     dataset.data.show()
 
     // Preprocess data
-    val x = dataset.preprocess()
-    x.show()
+    val toCluster = dataset.preprocessForClustering()
+    toCluster.show()
+
+    // Cluster data and print centroids
+    val kmeans = Predictor("KM", dataset)
+    kmeans.cluster()
+    kmeans.trainedModel.clusterCenters.foreach(println)
 
     /*
     // Train the classifier and test it
@@ -62,7 +67,7 @@ object PerformanceEvaluator {
 
     // Set default values
     val defaultOptions = Map[String, String](
-      "inputPath" -> "dataset/adult.data",
+      "inputPath" -> "datasets/adult.data",
       "classifierName" -> null
     )
     return nextOption(defaultOptions, arglist)

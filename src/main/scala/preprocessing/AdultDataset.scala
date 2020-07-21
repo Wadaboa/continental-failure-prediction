@@ -30,8 +30,8 @@ object AdultDataset extends DatasetProperty {
     return Array("high-income")
   }
 
-  override def getSchemaString(): String = {
-    return """
+  override def getSchemaString(): Option[String] = {
+    return Some("""
       `age` INT,
       `workclass` STRING,
       `fnlwgt` INT,
@@ -47,19 +47,23 @@ object AdultDataset extends DatasetProperty {
       `hours-per-week` INT,
       `native-country` STRING,
       `high-income` STRING
-    """
+    """)
   }
 
 }
 
-class AdultDataset(inputPath: String) extends Dataset(inputPath) {
+class AdultDataset(
+    inputPath: Option[String] = None,
+    var inputData: Option[DataFrame] = None
+) extends Dataset(inputPath, inputData) {
 
   override def property = AdultDataset
 
   override def preprocess(): DataFrame = {
     val funcs = Seq(
       Preprocessor.trimValues(_: DataFrame),
-      Preprocessor.maintainColumns(_: DataFrame, property.getColumnNames()),
+      Preprocessor
+        .maintainColumns(_: DataFrame, property.getUsefulColumnNames()),
       Preprocessor.valuesToNull(_: DataFrame, "?"),
       Preprocessor.valuesToNull(_: DataFrame, ""),
       Preprocessor.dropNullRows(_: DataFrame),

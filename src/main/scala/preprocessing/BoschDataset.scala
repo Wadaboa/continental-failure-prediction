@@ -6,34 +6,22 @@ object BoschDataset extends DatasetProperty {
 
   override val delimiter = ";"
 
-  override def getDiscreteColumnNames(): Array[String] = {
-    return Array()
-  }
-
-  override def getContinuosColumnNames(): Array[String] = {
-    return Array()
-  }
-
   override def getTargetColumnNames(): Array[String] = {
     return Array("Response")
   }
 
 }
 
-class BoschDataset(inputPath: String) extends Dataset(inputPath) {
+class BoschDataset(
+    inputPath: Option[String] = None,
+    var inputData: Option[DataFrame] = None
+) extends Dataset(inputPath, inputData) {
 
   override def property = BoschDataset
 
-  override def preprocess(): DataFrame = {
-    val funcs = Seq(
-      Preprocessor.dropColumns(_: DataFrame, "Id"),
-      Preprocessor.binaryConversion(_: DataFrame),
-      Preprocessor.pca(_: DataFrame, 50)
-    )
-    return funcs.foldLeft(data) { (r, f) => f(r) }
-  }
+  override def preprocess(): DataFrame = { return null }
 
-  def preprocessForClustering(): DataFrame = {
+  override def preprocessForClustering(): DataFrame = {
     val funcs = Seq(
       Preprocessor.dropColumns(_: DataFrame, "Id"),
       Preprocessor.binaryConversion(_: DataFrame),

@@ -21,6 +21,7 @@ object Predictor {
   ): Predictor[_] = {
     name match {
       case "DT" => new DecisionTreeClassifier(dataset, split)
+      case "KM" => new KMeansClusterer(dataset, split)
       case _    => throw new IllegalArgumentException("Unsupported predictor.")
     }
   }
@@ -32,11 +33,9 @@ abstract class Predictor[M <: PipelineStage](
     split: Boolean = true
 ) {
 
-  if (split) {
-    val Array(trainingData, validationData, testData) =
-      dataset.data.randomSplit(Array(0.5, 0.3, 0.2), seed = getRandomSeed())
-  }
-  val model: M = getModel()
+  val Array(trainingData, validationData, testData) =
+    dataset.data.randomSplit(Array(0.5, 0.3, 0.2), seed = getRandomSeed())
+  var model: M = getModel()
   val pipeline: Pipeline = getPipeline()
   var trainedModel: PipelineModel = _
   val metricName: String
@@ -48,19 +47,41 @@ abstract class Predictor[M <: PipelineStage](
   /** Defines model-specific data transformations */
   def getPipeline(): Pipeline
 
+  /** Returns the correct training set */
+  def getTrainingData(): DataFrame = {
+    if (split) return trainingData
+    return dataset.data
+  }
+
   /** Trains the model */
   def train(): Unit = {
-    var inputData = dataset.data.select("*")
-    if (split) inputData = trainingData
-    trainedModel = pipeline.fit(inputData)
+    trainedModel = pipeline.fit(getTrainingData())
+  }
+
+  /** Returns the correct test set */
+  def getTestData(): DataFrame = {
+    if (split) return testData
+    return dataset.data
   }
 
   /** Tests the model */
   def test(): DataFrame = {
-    var inputData = dataset.data.select("*")
-    if (split) inputData = testData
-    return trainedModel.transform(inputData)
+    return trainedModel.transform(getTestData())
   }
+
+  /** Returns the correct validation set */
+  def getValidationData(): DataFrame = {
+    if (split) return validationData
+    return dataset.data
+  }
+
+  /** Validates the model */
+  def validate(): DataFrame = {
+    return trainedModel.transform(getValidationData())
+  }
+
+  /** Finds the best hyper-parameters */
+  def runValidation(): Unit
 
   /** Defines the evaluator */
   def getEvaluator(): Evaluator

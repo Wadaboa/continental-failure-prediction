@@ -32,27 +32,19 @@ class DecisionTreeClassifier(dataset: Dataset, split: Boolean = true)
   }
 
   override def getPipeline(): Pipeline = {
-    // Columns to index to numbers
-    val toIndex = Array(
-      "workclass",
-      "education",
-      "marital-status",
-      "occupation",
-      "relationship",
-      "race",
-      "sex",
-      "native-country"
-    )
+    // Get column and target names
+    val target = dataset.property.getTargetColumnNames()(0)
+    val cols = dataset.getColumnNames().filter(c => c != target)
 
     // Index columns
     val columnsIndexer = new StringIndexer()
-      .setInputCols(toIndex)
-      .setOutputCols(toIndex.map("indexed" + _))
+      .setInputCols(cols)
+      .setOutputCols(cols.map("indexed-" + _))
       .fit(dataset.data)
 
     // Index labels
     val labelIndexer = new StringIndexer()
-      .setInputCol(dataset.property.getTargetColumnNames()(0))
+      .setInputCol(target)
       .setOutputCol("label")
       .fit(dataset.data)
 
@@ -82,7 +74,7 @@ class DecisionTreeClassifier(dataset: Dataset, split: Boolean = true)
     return pipeline
   }
 
-  def getEvaluator(): Evaluator = {
+  override def getEvaluator(): Evaluator = {
     return new MulticlassClassificationEvaluator()
       .setLabelCol("label")
       .setPredictionCol("prediction")
