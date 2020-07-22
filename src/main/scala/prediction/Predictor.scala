@@ -3,12 +3,14 @@ package prediction
 import preprocessing.{Dataset}
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.ml.{Pipeline, PipelineStage, PipelineModel}
+import org.apache.spark.ml.{Pipeline, PipelineStage, Transformer}
 import org.apache.spark.ml.feature.{
   StringIndexer,
   VectorAssembler,
   IndexToString
 }
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.tuning.CrossValidator
 import org.apache.spark.ml.evaluation.{Evaluator}
 
 object Predictor {
@@ -17,7 +19,7 @@ object Predictor {
   def apply(
       name: String,
       dataset: Dataset
-  ): Predictor = {
+  ): Predictor[_] = {
     name match {
       case "DT" => new DecisionTreeClassifier(dataset)
       case "RF" => new RandomForestClassifier(dataset)
@@ -27,29 +29,26 @@ object Predictor {
 
 }
 
-abstract class Predictor(dataset: Dataset) {
+abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
 
   // Define common variables
   var labelCol: String = "label"
   var featuresCol: String = "features"
   var predictionCol: String = "prediction"
   var metricName: String = "accuracy"
+  var cvFolds: Int = 5
+  var cvConcurrency: Int = 2
 
-  // Define type variables
-  type T <: PipelineStage
+  val Array(trainingData, testData) =
+    dataset.data.randomSplit(Array(0.8, 0.2), seed = getRandomSeed())
+  var model: T
+  var trainedModel: Transformer = _
 
-  val Array(trainingData, validationData, testData) =
-    dataset.data.randomSplit(Array(0.5, 0.3, 0.2), seed = getRandomSeed())
-  var model: T = getModel()
-  var trainedModel: PipelineModel = _
-  val pipeline: Pipeline = getPipeline()
-  val evaluator: Evaluator = getEvaluator()
-
-  /** Defines the model */
-  def getModel(): T
+  /** Returns the model */
+  def getModel(): T = model
 
   /** Defines model-specific data transformations */
-  def getPipeline(): Pipeline = {
+  def pipeline: Pipeline = {
     // Get column and target names
     val target = dataset.property.getTargetColumnNames()(0)
     val cols = dataset.getColumnNames().filter(c => c != target)
@@ -74,41 +73,49 @@ abstract class Predictor(dataset: Dataset) {
     // Convert index labels back to original labels
     val labelConverter = new IndexToString()
       .setInputCol(predictionCol)
-      .setOutputCol("predicted-label")
+      .setOutputCol("predicted-" + target)
       .setLabels(labelIndexer.labels)
 
     // Define the pipeline
-    val pipeline = new Pipeline()
+    return new Pipeline()
       .setStages(
         Array(
           columnsIndexer,
           labelIndexer,
           featuresAssembler,
-          model,
+          getModel(),
           labelConverter
         )
       )
-
-    return pipeline
   }
 
+  /** Defines the parameter grid to use in cross-validation */
+  def paramGrid: Array[ParamMap]
+
   /** Trains the model */
-  def train(): Unit = {
-    trainedModel = pipeline.fit(trainingData)
+  def train(validate: Boolean = false): Unit = {
+    if (!validate) trainedModel = pipeline.fit(trainingData)
+    else {
+      trainedModel = new CrossValidator()
+        .setEstimator(pipeline)
+        .setEvaluator(evaluator)
+        .setEstimatorParamMaps(paramGrid)
+        .setNumFolds(cvFolds)
+        .setParallelism(cvConcurrency)
+        .setSeed(getRandomSeed())
+        .fit(trainingData)
+    }
   }
 
   /** Tests the model */
   def test(): DataFrame = {
-    return trainedModel.transform(testData)
-  }
-
-  /** Validates the model */
-  def validate(): DataFrame = {
-    return trainedModel.transform(validationData)
+    return trainedModel
+      .transform(testData)
+      .select(labelCol, predictionCol)
   }
 
   /** Defines the evaluator */
-  def getEvaluator(): Evaluator
+  def evaluator: Evaluator
 
   /** Evaluates predictions */
   def evaluate(predictions: DataFrame): Double = {

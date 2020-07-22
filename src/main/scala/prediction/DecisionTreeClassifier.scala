@@ -8,28 +8,33 @@ import org.apache.spark.ml.evaluation.{
   Evaluator,
   MulticlassClassificationEvaluator
 }
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.tuning.ParamGridBuilder
 import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
 
-class DecisionTreeClassifier(dataset: Dataset) extends Predictor(dataset) {
+class DecisionTreeClassifier(dataset: Dataset) extends Predictor[DT](dataset) {
 
   var impurity: String = "entropy"
   var maxDepth: Int = 10
   var maxBins: Int = 64
 
-  override type T = DT
+  var model = new DT()
+    .setImpurity(impurity)
+    .setMaxDepth(maxDepth)
+    .setMaxBins(maxBins)
+    .setSeed(getRandomSeed())
+    .setLabelCol(labelCol)
+    .setFeaturesCol(featuresCol)
+    .setPredictionCol(predictionCol)
 
-  override def getModel(): DT = {
-    return new DT()
-      .setImpurity(impurity)
-      .setMaxDepth(maxDepth)
-      .setMaxBins(maxBins)
-      .setSeed(getRandomSeed())
-      .setLabelCol(labelCol)
-      .setFeaturesCol(featuresCol)
-      .setPredictionCol(predictionCol)
+  override def paramGrid: Array[ParamMap] = {
+    return new ParamGridBuilder()
+      .addGrid(model.maxDepth, (1 to maxDepth).toArray)
+      .addGrid(model.maxBins, (dataset.maxDistinctValues to maxBins).toArray)
+      .build()
   }
 
-  override def getEvaluator(): Evaluator = {
+  override def evaluator: Evaluator = {
     return new MulticlassClassificationEvaluator()
       .setLabelCol(labelCol)
       .setPredictionCol(predictionCol)

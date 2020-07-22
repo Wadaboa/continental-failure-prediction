@@ -2,6 +2,7 @@ package preprocessing
 
 import org.apache.spark.sql.{SparkSession, DataFrame, DataFrameReader}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.functions.countDistinct
 
 trait DatasetProperty {
 
@@ -116,5 +117,10 @@ abstract class Dataset(
   def renameColumn(before: String, after: String): Unit = {
     data = data.withColumnRenamed(before, after)
   }
+
+  def maxDistinctValues: Int =
+    data.columns
+      .map(c => data.agg(countDistinct(c)).first.getInt(0))
+      .max
 
 }
