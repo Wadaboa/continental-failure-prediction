@@ -84,9 +84,9 @@ object Preprocessor {
   /** Perform Principal Component Analysis to reduce the number of features */
   def pca(
       data: DataFrame,
-      maxComponents: Integer,
-      assemble: Boolean = true,
-      explainedVariance: Double = 0.35
+      maxComponents: Int,
+      assembleFeatures: Boolean = true,
+      explainedVariance: Double = 0.95
   ): DataFrame = {
     require(
       explainedVariance > 0 && explainedVariance <= 1,
@@ -94,15 +94,10 @@ object Preprocessor {
     )
 
     // Assemble input features into a single vector
-    var inputData = data.select("*")
     val featuresCol = "features"
     val pcaFeaturesCol = "pcaFeatures"
-    if (assemble) {
-      inputData = new VectorAssembler()
-        .setInputCols(data.columns)
-        .setOutputCol(featuresCol)
-        .transform(inputData)
-    }
+    var inputData: DataFrame = data
+    if (assembleFeatures) inputData = assemble(data, outputCol = featuresCol)
 
     // Perform PCA
     val pca = new PCA()
@@ -166,6 +161,22 @@ object Preprocessor {
       .transform(data)
       .drop(columnName)
       .withColumnRenamed(s"T${columnName}", columnName)
+  }
+
+  /** Assembles the given columns (or every column) into a single one */
+  def assemble(
+      data: DataFrame,
+      inputCols: Option[Array[String]] = None,
+      outputCol: String
+  ): DataFrame = {
+    var assembler = new VectorAssembler()
+    inputCols match {
+      case Some(value) => assembler = assembler.setInputCols(value)
+      case None        => assembler = assembler.setInputCols(data.columns)
+    }
+    return assembler
+      .setOutputCol(outputCol)
+      .transform(data)
   }
 
 }

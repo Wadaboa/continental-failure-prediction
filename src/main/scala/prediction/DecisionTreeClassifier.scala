@@ -15,9 +15,9 @@ import org.apache.spark.ml.evaluation.{
 }
 import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
 
-class DecisionTreeClassifier(dataset: Dataset) extends Predictor[DT](dataset) {
+class DecisionTreeClassifier(dataset: Dataset) extends Predictor(dataset) {
 
-  override val metricName: String = "accuracy"
+  override type M = DT
 
   override def getModel(): DT = {
     return new DT()
@@ -72,6 +72,8 @@ class DecisionTreeClassifier(dataset: Dataset) extends Predictor[DT](dataset) {
 
     return pipeline
   }
+
+  override def getMetricName(): String = "accuracy"
 
   override def getEvaluator(): Evaluator = {
     return new MulticlassClassificationEvaluator()

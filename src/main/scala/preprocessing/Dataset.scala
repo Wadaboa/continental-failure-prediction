@@ -62,6 +62,9 @@ abstract class Dataset(
     inputData: Option[DataFrame] = None
 ) {
 
+  // Define type variables
+  type T <: Dataset
+
   /** Stores the companion object */
   def property: DatasetProperty
 
@@ -74,19 +77,27 @@ abstract class Dataset(
         case Some(value) => data = value
         case None =>
           throw new IllegalArgumentException(
-            "Either inputhPath or data should be given."
+            "Either inputhPath or inputData should be given."
           )
       }
     }
   }
 
   /** Applies a sequence of pre-processing functions to the given DataFrame */
-  def preprocess(): DataFrame = data
+  def preprocess(): T
 
   /** Returns the DataFrame's column names */
   def getColumnNames(): Array[String] = data.columns.toArray
 
   /** Returns the DataFrame's rows number */
-  def getNumRows(): Integer = data.count.toInt
+  def getNumRows(): Int = data.count.toInt
+
+  /** Shows the DataFrame */
+  def show(): Unit = data.show()
+
+  /** Renames the given column */
+  def renameColumn(before: String, after: String): Unit = {
+    data = data.withColumnRenamed(before, after)
+  }
 
 }

@@ -6,26 +6,29 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.evaluation.{Evaluator, ClusteringEvaluator}
 import org.apache.spark.ml.clustering.{KMeans => KM, KMeansModel => KMM}
 
-class KMeansClusterer(dataset: Dataset) extends Clusterer[KM, KMM](dataset) {
+class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
 
-  override val metricName: String = "silhouette"
+  override type M = KMM
+  override type T = KM
 
-  override def train(): Unit = {
+  override def train(): KMM = {
     var bestSilhouette: Double = -1
     var bestModel: KM = null
     var bestTrainedModel: KMM = null
-    for (k <- 1 to maxClusters) {
-      var tempModel = new KM().setK(k)
-      var tempTrainedModel = tempModel.fit(dataset.data)
+    for (k <- minClusters to maxClusters) {
+      var tempModel: KM = new KM().setK(k)
+      var tempTrainedModel: KMM = tempModel.fit(dataset.data)
       var silhouette = evaluate(tempTrainedModel.transform(dataset.data))
+      println(silhouette)
       if (silhouette > bestSilhouette) {
+        println("NEW BEST")
         bestModel = tempModel
         bestTrainedModel = tempTrainedModel
         bestSilhouette = silhouette
       }
     }
     model = bestModel
-    trainedModel = bestTrainedModel
+    return bestTrainedModel
   }
 
   override def getModel(): KM = {
@@ -34,7 +37,9 @@ class KMeansClusterer(dataset: Dataset) extends Clusterer[KM, KMM](dataset) {
       .setSeed(getRandomSeed())
   }
 
-  def getEvaluator(): Evaluator = {
+  override def getMetricName(): String = "silhouette"
+
+  override def getEvaluator(): Evaluator = {
     return new ClusteringEvaluator()
       .setFeaturesCol("features")
       .setPredictionCol("prediction")

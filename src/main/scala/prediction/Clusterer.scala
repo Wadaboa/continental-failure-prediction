@@ -12,7 +12,7 @@ object Clusterer {
   def apply(
       name: String,
       dataset: Dataset
-  ): Clusterer[_, _] = {
+  ): Clusterer = {
     name match {
       case "KM" => new KMeansClusterer(dataset)
       case _    => throw new IllegalArgumentException("Unsupported clusterer.")
@@ -21,24 +21,31 @@ object Clusterer {
 
 }
 
-abstract class Clusterer[T <: Estimator[M], M <: Model[M]](dataset: Dataset) {
+abstract class Clusterer(dataset: Dataset) {
 
-  val maxClusters: Integer = dataset.getNumRows()
+  // Define type variables
+  type M <: Model[M]
+  type T <: Estimator[M]
+
+  var minClusters: Int = 2
+  var maxClusters: Int = dataset.getNumRows()
   var model: T = getModel()
-  var trainedModel: M = _
-  val metricName: String
+  val metricName: String = getMetricName()
   val evaluator: Evaluator = getEvaluator()
 
   /** Defines the model */
   def getModel(): T
 
   /** Trains the model */
-  def train(): Unit = {
-    trainedModel = model.fit(dataset.data)
+  def train(): M = {
+    return model.fit(dataset.data)
   }
 
   /** Defines the evaluator */
   def getEvaluator(): Evaluator
+
+  /** Defines the metric name */
+  def getMetricName(): String
 
   /** Evaluates predictions */
   def evaluate(predictions: DataFrame): Double = {

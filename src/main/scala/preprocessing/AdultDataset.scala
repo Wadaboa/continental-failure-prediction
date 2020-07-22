@@ -57,9 +57,11 @@ class AdultDataset(
     inputData: Option[DataFrame] = None
 ) extends Dataset(inputPath, inputData) {
 
+  override type T = AdultDataset
+
   override def property = AdultDataset
 
-  override def preprocess(): DataFrame = {
+  override def preprocess(): AdultDataset = {
     val funcs = Seq(
       Preprocessor.trimValues(_: DataFrame),
       Preprocessor
@@ -74,7 +76,9 @@ class AdultDataset(
       Preprocessor.quantileDiscretizer(_: DataFrame, "capital-gain", 10),
       Preprocessor.quantileDiscretizer(_: DataFrame, "capital-loss", 5)
     )
-    return funcs.foldLeft(data) { (r, f) => f(r) }
+    return new AdultDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
+      f(r)
+    }))
   }
 
 }

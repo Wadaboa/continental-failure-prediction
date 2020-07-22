@@ -5,11 +5,10 @@ _PATH=$(dirname "$(realpath $0)")
 # Compile and package app in a JAR file
 sbt clean package
 
-# Define submit common commands
-PARAMS="--class PerformanceEvaluator /home/ec2-user/production-line-performance_2.12-1.0.jar --input-path s3a://production-line-performance/datasets/bosch-less.data --classifier-name DT"
-
 # Parse deploy mode
 if [ $1 -eq "remote" ]; then
+	# Define submit common commands
+	PARAMS="--class PerformanceEvaluator /home/ec2-user/production-line-performance_2.12-1.0.jar --input-path s3a://production-line-performance/datasets/bosch-less.data --classifier-name DT"
 
 	# Load AWS credentials
 	source $_PATH/../aws-credentials.env
@@ -42,28 +41,23 @@ if [ $1 -eq "remote" ]; then
 	EC2_NAME=$(flintrock describe | ggrep -oP '(?<=master: )[^ ]*')
 
 	if [ $2 -eq "ssh" ]; then
-
 		# Submit in remote machine, using SSH
 		ssh -i $_PATH/../my-key-pair.pem ec2-user@$EC2_NAME -t "spark-submit ${PARAMS}"
-
 	elif [ $2 -eq "flintrock" ]; then
-
 		# Submit in remote machine, using Flintrock
 		flintrock run-command --master-only production-line-performance "spark-submit ${PARAMS}"
-	
 	else
-
 		# Submit from local machine
 		spark-submit \ 
 		--master spark://${EC2_NAME}:7077 \
 		--deploy-mode cluster \
 		${PARAMS}
-	
 	fi
-
 else
-
 	# Launch Spark locally
-	spark-submit ${PARAMS}
-
+	spark-submit \
+		--class PerformanceEvaluator 
+		$_PATH/../target/scala-2.12/production-line-performance_2.12-1.0.jar \
+		--input-path $_PATH/../datasets/bosch-less.data \
+		--classifier-name DT
 fi

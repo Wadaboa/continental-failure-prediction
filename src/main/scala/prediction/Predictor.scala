@@ -12,7 +12,7 @@ object Predictor {
   def apply(
       name: String,
       dataset: Dataset
-  ): Predictor[_] = {
+  ): Predictor = {
     name match {
       case "DT" => new DecisionTreeClassifier(dataset)
       case _    => throw new IllegalArgumentException("Unsupported predictor.")
@@ -21,14 +21,17 @@ object Predictor {
 
 }
 
-abstract class Predictor[M <: PipelineStage](dataset: Dataset) {
+abstract class Predictor(dataset: Dataset) {
+
+  // Define type variables
+  type M <: PipelineStage
 
   val Array(trainingData, validationData, testData) =
     dataset.data.randomSplit(Array(0.5, 0.3, 0.2), seed = getRandomSeed())
   var model: M = getModel()
   val pipeline: Pipeline = getPipeline()
   var trainedModel: PipelineModel = _
-  val metricName: String
+  val metricName: String = getMetricName()
   val evaluator: Evaluator = getEvaluator()
 
   /** Defines the model */
@@ -51,6 +54,9 @@ abstract class Predictor[M <: PipelineStage](dataset: Dataset) {
   def validate(): DataFrame = {
     return trainedModel.transform(validationData)
   }
+
+  /** Defines the metric name */
+  def getMetricName(): String
 
   /** Defines the evaluator */
   def getEvaluator(): Evaluator

@@ -18,19 +18,21 @@ object PerformanceEvaluator {
 
     // Create Dataset object (and read data)
     val dataset = new BoschDataset(inputPath = inputPath)
-    dataset.data.show()
+    dataset.show()
 
     // Preprocess data
-    val toCluster = new BoschDataset(
-      inputData = Some(dataset.preprocessForClustering())
-    )
-    toCluster.data.show()
+    val toCluster = dataset.preprocessForClustering()
+    toCluster.renameColumn("pcaFeatures", "features")
+    toCluster.show()
 
     // Cluster data and print centroids
     val kmeans = Clusterer("KM", toCluster)
-    kmeans.train()
-    println(kmeans.trainedModel)
-    //.clusterCenters.foreach(println)
+    kmeans.maxClusters = 3
+    val trainedModel = kmeans.train()
+    println("HERE1")
+    println(trainedModel)
+    println("HERE2")
+    trainedModel.clusterCenters.foreach(println)
 
     /*
     // Train the classifier and test it
@@ -70,7 +72,7 @@ object PerformanceEvaluator {
 
     // Set default values
     val defaultOptions = Map[String, String](
-      "inputPath" -> "datasets/adult.data",
+      "inputPath" -> "datasets/bosch-less.data",
       "classifierName" -> null
     )
     return nextOption(defaultOptions, arglist)
