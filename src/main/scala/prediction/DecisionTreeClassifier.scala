@@ -29,8 +29,11 @@ class DecisionTreeClassifier(dataset: Dataset) extends Predictor[DT](dataset) {
 
   override def paramGrid: Array[ParamMap] = {
     return new ParamGridBuilder()
-      .addGrid(model.maxDepth, (1 to maxDepth).toArray)
-      .addGrid(model.maxBins, (dataset.maxDistinctValues to maxBins).toArray)
+      .addGrid(model.maxDepth, (1 to maxDepth by 3).toArray)
+      .addGrid(
+        model.maxBins,
+        (dataset.maxDistinctValues to maxBins by 10).toArray
+      )
       .build()
   }
 

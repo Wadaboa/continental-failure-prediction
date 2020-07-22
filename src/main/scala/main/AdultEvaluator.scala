@@ -16,7 +16,6 @@ object AdultEvaluator {
 
     // Create Dataset object (and read data)
     val dataset = Dataset(name = "Adult", inputPath = inputPath)
-    println(dataset.maxDistinctValues)
     dataset.show()
 
     // Preprocess data

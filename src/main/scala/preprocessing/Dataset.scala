@@ -120,7 +120,8 @@ abstract class Dataset(
 
   def maxDistinctValues: Int =
     data.columns
-      .map(c => data.agg(countDistinct(c)).first.getInt(0))
+      .map(c => data.agg(countDistinct(c)).first.getLong(0))
       .max
+      .toInt
 
 }
