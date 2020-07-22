@@ -58,6 +58,6 @@ else
 	spark-submit \
 		--class PerformanceEvaluator 
 		$_PATH/../target/scala-2.12/production-line-performance_2.12-1.0.jar \
-		--input-path $_PATH/../datasets/bosch-less.data \
+		--input-path $_PATH/../datasets/bosch/bosch-less.data \
 		--classifier-name DT
 fi

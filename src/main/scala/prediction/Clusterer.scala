@@ -3,7 +3,7 @@ package prediction
 import preprocessing.{Dataset}
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.ml.{Model, Estimator}
+import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.ml.evaluation.{Evaluator}
 
 object Clusterer {

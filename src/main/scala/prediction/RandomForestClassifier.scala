@@ -8,19 +8,21 @@ import org.apache.spark.ml.evaluation.{
   Evaluator,
   MulticlassClassificationEvaluator
 }
-import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
+import org.apache.spark.ml.classification.{RandomForestClassifier => RF}
 
-class DecisionTreeClassifier(dataset: Dataset) extends Predictor(dataset) {
+class RandomForestClassifier(dataset: Dataset) extends Predictor(dataset) {
 
   var impurity: String = "entropy"
+  var numTrees: Int = 10
   var maxDepth: Int = 10
   var maxBins: Int = 64
 
-  override type T = DT
+  override type T = RF
 
-  override def getModel(): DT = {
-    return new DT()
+  override def getModel(): RF = {
+    return new RF()
       .setImpurity(impurity)
+      .setNumTrees(numTrees)
       .setMaxDepth(maxDepth)
       .setMaxBins(maxBins)
       .setSeed(getRandomSeed())

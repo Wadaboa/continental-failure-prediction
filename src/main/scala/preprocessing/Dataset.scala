@@ -57,6 +57,23 @@ trait DatasetProperty {
 
 }
 
+object Dataset {
+
+  /** Dataset's factory method */
+  def apply(
+      name: String,
+      inputPath: Option[String] = None,
+      inputData: Option[DataFrame] = None
+  ): Dataset = {
+    name match {
+      case "Adult" => new AdultDataset(inputPath, inputData)
+      case "Bosch" => new BoschDataset(inputPath, inputData)
+      case _       => throw new IllegalArgumentException("Unsupported dataset.")
+    }
+  }
+
+}
+
 abstract class Dataset(
     inputPath: Option[String] = None,
     inputData: Option[DataFrame] = None
