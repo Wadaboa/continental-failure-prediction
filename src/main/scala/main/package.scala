@@ -39,6 +39,7 @@ package object main {
     return nextOption(defaultOptions, arglist)
   }
 
+  /** Stops Spark execution */
   def stopSpark(): Unit = spark.stop()
 
 }

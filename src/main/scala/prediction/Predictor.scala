@@ -19,13 +19,12 @@ object Predictor {
   def apply(
       name: String,
       dataset: Dataset
-  ): Predictor[_] = {
-    name match {
-      case "DT" => new DecisionTreeClassifier(dataset)
-      case "RF" => new RandomForestClassifier(dataset)
+  ) =
+    name.toUpperCase match {
+      case "DT" => DecisionTreeClassifier(dataset)
+      case "RF" => RandomForestClassifier(dataset)
       case _    => throw new IllegalArgumentException("Unsupported predictor.")
     }
-  }
 
 }
 

@@ -1,10 +1,7 @@
 package main
 
-import preprocessing.{Dataset}
+import preprocessing.Dataset
 import prediction.{Predictor, Clusterer}
-
-import org.apache.spark.sql.{SparkSession, DataFrame}
-import preprocessing.Preprocessor
 
 object BoschEvaluator {
 
@@ -13,10 +10,6 @@ object BoschEvaluator {
     val options = parseArgs(args)
     val inputPath = options.get("inputPath")
     val classifierName = options.get("classifierName")
-
-    // Create SparkSession object
-    val spark =
-      SparkSession.builder.appName("Production line performance").getOrCreate()
 
     // Create Dataset object (and read data)
     val dataset = Dataset("Bosch", inputPath = inputPath)
@@ -31,10 +24,9 @@ object BoschEvaluator {
     val kmeans = Clusterer("KM", toCluster)
     kmeans.maxClusters = 3
     val trainedModel = kmeans.train()
-    println("HERE1")
-    println(trainedModel)
-    println("HERE2")
-    //trainedModel.clusterCenters.foreach(println)
+    trainedModel.clusterCenters.foreach(println)
+    val wsse = kmeans.inertia(trainedModel)
+    println(wsse)
 
     /*
     // Train the classifier and test it

@@ -1,10 +1,7 @@
 package main
 
-import preprocessing.{Dataset}
-import prediction.{Predictor}
-
-import org.apache.spark.sql.{SparkSession, DataFrame}
-import preprocessing.Preprocessor
+import preprocessing.Dataset
+import prediction.Predictor
 
 object AdultEvaluator {
 

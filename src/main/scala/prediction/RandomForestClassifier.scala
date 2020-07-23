@@ -12,7 +12,8 @@ import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.tuning.ParamGridBuilder
 import org.apache.spark.ml.classification.{RandomForestClassifier => RF}
 
-class RandomForestClassifier(dataset: Dataset) extends Predictor[RF](dataset) {
+protected case class RandomForestClassifier(dataset: Dataset)
+    extends Predictor[RF](dataset) {
 
   var impurity: String = "entropy"
   var numTrees: Int = 10
