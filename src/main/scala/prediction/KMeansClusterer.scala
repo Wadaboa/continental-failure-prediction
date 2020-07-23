@@ -1,13 +1,11 @@
 package prediction
 
 import preprocessing.{Dataset}
+import evaluation.SquaredEuclideanInertia
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.evaluation.{Evaluator, ClusteringEvaluator}
 import org.apache.spark.ml.clustering.{KMeans => KM, KMeansModel => KMM}
-import org.apache.spark.ml.linalg.Vector
-import org.apache.spark.mllib.clustering.DistanceMeasure
-import org.apache.spark.mllib.linalg.{Vectors => OldVectors}
 
 protected case class KMeansClusterer(dataset: Dataset)
     extends Clusterer(dataset) {
@@ -16,7 +14,7 @@ protected case class KMeansClusterer(dataset: Dataset)
   override type T = KM
 
   override var metricName: String = "silhouette"
-  val distanceMeasure: String = "euclidean"
+  var distanceMeasure: String = "squaredEuclidean"
 
   override var model: KM = new KM()
     .setK(maxClusters)
@@ -25,14 +23,17 @@ protected case class KMeansClusterer(dataset: Dataset)
     .setFeaturesCol(featuresCol)
     .setPredictionCol(predictionCol)
 
-  override def train(): KMM = {
+  override def train(): Unit = {
     var bestSilhouette: Double = -1
     var bestModel: KM = null
     var bestTrainedModel: KMM = null
     for (k <- minClusters to maxClusters) {
-      var tempModel: KM = new KM().setK(k)
+      var tempModel: KM = model
       var tempTrainedModel: KMM = tempModel.fit(dataset.data)
-      var silhouette = evaluate(tempTrainedModel.transform(dataset.data))
+      var silhouette = evaluate(
+        tempTrainedModel.transform(dataset.data),
+        metricName = "silhouette"
+      )
       if (silhouette > bestSilhouette) {
         bestModel = tempModel
         bestTrainedModel = tempTrainedModel
@@ -40,34 +41,27 @@ protected case class KMeansClusterer(dataset: Dataset)
       }
     }
     model = bestModel
-    return bestTrainedModel
+    trainedModel = bestTrainedModel
   }
 
-  override def evaluator: Evaluator =
-    new ClusteringEvaluator()
-      .setFeaturesCol(featuresCol)
-      .setPredictionCol(predictionCol)
-      .setMetricName(metricName)
-
-  /** Compute the Within Set Sum of Squared Errors */
-  def inertia(trainedModel: KMM): Double = {
-    val bClusterCenters = dataset.data.sparkSession.sparkContext.broadcast(
-      trainedModel.clusterCenters.map(p =>
-        new VectorWithNorm(OldVectors.fromML(p))
-      )
-    )
-    val cost = dataset.data
-      .select(featuresCol)
-      .rdd
-      .map { row =>
-        pointCost(
-          bClusterCenters.value,
-          new VectorWithNorm(OldVectors.fromML(row.getAs[Vector](0)))
+  override def evaluate(
+      predictions: DataFrame,
+      metricName: String = this.metricName
+  ): Double = {
+    metricName match {
+      case "silhouette" =>
+        new ClusteringEvaluator()
+          .setFeaturesCol(featuresCol)
+          .setPredictionCol(predictionCol)
+          .setMetricName(metricName)
+          .evaluate(predictions)
+      case "inertia" =>
+        SquaredEuclideanInertia.computeInertiaScore(
+          predictions,
+          featuresCol,
+          trainedModel.clusterCenters
         )
-      }
-      .sum()
-    bClusterCenters.destroy()
-    cost
+    }
   }
 
 }

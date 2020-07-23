@@ -34,21 +34,17 @@ abstract class Clusterer(dataset: Dataset) {
   var maxClusters: Int = dataset.getNumRows()
 
   var model: T
-
-  /** Returns the model */
-  def getModel(): T = model
+  var trainedModel: M = _
 
   /** Trains the model */
-  def train(): M = {
-    return model.fit(dataset.data)
+  def train(): Unit = {
+    trainedModel = model.fit(dataset.data)
   }
-
-  /** Defines the evaluator */
-  def evaluator: Evaluator
 
   /** Evaluates predictions */
-  def evaluate(predictions: DataFrame): Double = {
-    return evaluator.evaluate(predictions)
-  }
+  def evaluate(
+      predictions: DataFrame,
+      metricName: String = this.metricName
+  ): Double
 
 }
