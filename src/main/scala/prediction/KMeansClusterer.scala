@@ -16,59 +16,85 @@ protected case class KMeansClusterer(dataset: Dataset)
   override var metricName: String = "silhouette"
   var distanceMeasure: String = "euclidean"
 
-  override var model: KM = new KM()
-    .setK(maxClusters)
-    .setDistanceMeasure(distanceMeasure)
-    .setSeed(getRandomSeed())
-    .setFeaturesCol(featuresCol)
-    .setPredictionCol(predictionCol)
+  override var model: KM = getNewModel(maxClusters)
+
+  /** Returns a KMeans instance with the specified number of clusters */
+  def getNewModel(k: Int) =
+    new KM()
+      .setK(k)
+      .setDistanceMeasure(distanceMeasure)
+      .setSeed(getRandomSeed())
+      .setFeaturesCol(featuresCol)
+      .setPredictionCol(predictionCol)
 
   override def train(): Unit = {
-    var bestSilhouette: Double = -1
-    var bestModel: KM = null
-    var bestTrainedModel: KMM = null
-    for (k <- minClusters to maxClusters) {
-      var tempModel: KM = model
-      var tempTrainedModel: KMM = tempModel.fit(dataset.data)
-      var silhouette = evaluate(
-        tempTrainedModel.transform(dataset.data),
-        metricName = "silhouette"
+    var data = dataset.data
+    model = getNewModel(minClusters)
+    trainedModel = model.fit(data)
+    var gapResult = evaluate(
+      trainedModel.transform(data),
+      metricName = "gap"
+    )
+    println(gapResult)
+    var previousGap: Double = gapResult(0)
+    var previousStdDev: Double = gapResult(1)
+    var previousModel: KM = model
+    var previousTrainedModel: KMM = trainedModel
+    var previousData: DataFrame = data
+    for (k <- minClusters + 1 to maxClusters) {
+      println(k)
+      data = data.drop(predictionCol)
+      model = getNewModel(k)
+      trainedModel = model.fit(data)
+      gapResult = evaluate(
+        trainedModel.transform(data),
+        metricName = "gap"
       )
-      if (silhouette > bestSilhouette) {
-        bestModel = tempModel
-        bestTrainedModel = tempTrainedModel
-        bestSilhouette = silhouette
+      println(gapResult)
+      var (gap, stdDev) = (gapResult(0), gapResult(1))
+      if (previousGap > gap - stdDev) {
+        println("FOUND BEST")
+        dataset.data = data
+        model = previousModel
+        trainedModel = previousTrainedModel
+        return
       }
+      previousGap = gap
+      previousStdDev = stdDev
+      previousData = data
     }
-    model = bestModel
-    trainedModel = bestTrainedModel
   }
 
   override def evaluate(
       predictions: DataFrame,
       metricName: String = this.metricName
-  ): Double = {
+  ): Array[Double] = {
     metricName match {
       case "silhouette" =>
-        new ClusteringEvaluator()
-          .setFeaturesCol(featuresCol)
-          .setPredictionCol(predictionCol)
-          .setMetricName(metricName)
-          .evaluate(predictions)
+        Array(
+          new ClusteringEvaluator()
+            .setFeaturesCol(featuresCol)
+            .setPredictionCol(predictionCol)
+            .setMetricName(metricName)
+            .evaluate(predictions)
+        )
       case "inertia" =>
-        EuclideanInertia.computeInertiaScore(
-          predictions,
-          featuresCol,
-          trainedModel.clusterCenters
+        Array(
+          EuclideanInertia.computeInertiaScore(
+            predictions,
+            featuresCol,
+            trainedModel.clusterCenters
+          )
         )
       case "gap" =>
         EuclideanGap
           .computeGapScore(
             predictions,
             featuresCol,
+            predictionCol,
             trainedModel.clusterCenters
           )
-          ._1
+          .asInstanceOf[Array[Double]]
     }
   }
 

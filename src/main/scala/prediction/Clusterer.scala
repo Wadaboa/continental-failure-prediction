@@ -45,6 +45,6 @@ abstract class Clusterer(dataset: Dataset) {
   def evaluate(
       predictions: DataFrame,
       metricName: String = this.metricName
-  ): Double
+  ): Array[Double]
 
 }

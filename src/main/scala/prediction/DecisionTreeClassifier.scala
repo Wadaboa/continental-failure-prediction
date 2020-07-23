@@ -18,11 +18,13 @@ protected case class DecisionTreeClassifier(dataset: Dataset)
   var impurity: String = "entropy"
   var maxDepth: Int = 10
   var maxBins: Int = 64
+  var minSamplesLeaf: Int = 3
 
   var model = new DT()
     .setImpurity(impurity)
     .setMaxDepth(maxDepth)
     .setMaxBins(maxBins)
+    .setMinInstancesPerNode(minSamplesLeaf)
     .setSeed(getRandomSeed())
     .setLabelCol(labelCol)
     .setFeaturesCol(featuresCol)
@@ -35,6 +37,7 @@ protected case class DecisionTreeClassifier(dataset: Dataset)
         model.maxBins,
         (dataset.maxDistinctValues to maxBins by 10).toArray
       )
+      .addGrid(model.minInstancesPerNode, (1 to minSamplesLeaf by 2).toArray)
       .build()
   }
 

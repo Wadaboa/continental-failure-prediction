@@ -1,3 +1,6 @@
+import Numeric.Implicits._
+
+import org.apache.spark.sql.Row
 import org.apache.spark.mllib.linalg.{
   Vector => OldVector,
   Vectors => OldVectors
@@ -26,5 +29,21 @@ package object evaluation {
     def toDense: VectorWithNorm =
       new VectorWithNorm(OldVectors.dense(vector.toArray), norm)
   }
+
+  /** Computes the average over a generic iterable structure */
+  def mean[T: Numeric](xs: Iterable[T]): Double = xs.sum.toDouble / xs.size
+
+  /** Computes the variance over a generic iterable structure */
+  def variance[T: Numeric](xs: Iterable[T]): Double = {
+    val avg = mean(xs)
+    xs.map(_.toDouble).map(a => math.pow(a - avg, 2)).sum / xs.size
+  }
+
+  /** Computes the standard deviation over a generic iterable structure */
+  def stdDev[T: Numeric](xs: Iterable[T]): Double = math.sqrt(variance(xs))
+
+  /** Converts a DataFrame Row to Array[Double] */
+  def rowToArrayOfDouble(record: Row): Array[Double] =
+    (for (i <- 2 to record.size) yield record.getInt(i).toDouble).toArray
 
 }

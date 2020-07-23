@@ -19,6 +19,7 @@ protected case class RandomForestClassifier(dataset: Dataset)
   var numTrees: Int = 10
   var maxDepth: Int = 10
   var maxBins: Int = 64
+  var minSamplesLeaf: Int = 3
 
   var model = new RF()
     .setImpurity(impurity)
@@ -34,7 +35,11 @@ protected case class RandomForestClassifier(dataset: Dataset)
     return new ParamGridBuilder()
       .addGrid(model.numTrees, (1 to numTrees).toArray)
       .addGrid(model.maxDepth, (1 to maxDepth).toArray)
-      .addGrid(model.maxBins, (dataset.maxDistinctValues to maxBins).toArray)
+      .addGrid(
+        model.maxBins,
+        (dataset.maxDistinctValues to maxBins by 10).toArray
+      )
+      .addGrid(model.minInstancesPerNode, (1 to minSamplesLeaf by 2).toArray)
       .build()
   }
 

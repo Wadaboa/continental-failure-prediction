@@ -23,12 +23,13 @@ object BoschEvaluator {
     // Cluster data and print centroids
     val kmeans = Clusterer("KM", toCluster)
     kmeans.maxClusters = 3
-    kmeans.metricName = "inertia"
     kmeans.train()
     kmeans.trainedModel.clusterCenters.foreach(println)
     val predictions = kmeans.trainedModel.transform(dataset.data)
-    val result = kmeans.evaluate(predictions)
-    println(result)
+    val silhouette = kmeans.evaluate(predictions, metricName = "silhouette")
+    println(silhouette)
+    val gap = kmeans.evaluate(predictions, metricName = "gap")
+    println(gap)
 
     /*
     // Train the classifier and test it

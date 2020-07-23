@@ -1,7 +1,5 @@
 package evaluation
 
-import Numeric.Implicits._
-
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.functions.rand
 import org.apache.spark.ml.clustering.{KMeans, KMeansModel}
@@ -105,6 +103,7 @@ object EuclideanGap {
   def computeGapScore(
       data: Dataset[_],
       featuresCol: String,
+      predictionCol: String,
       clusterCenters: Array[Vector],
       numRandom: Int = 30
   ): Tuple2[Double, Double] = {
@@ -112,7 +111,7 @@ object EuclideanGap {
       EuclideanInertia.computeInertiaScore(data, featuresCol, clusterCenters)
     )
     val (expectedInertia, standardDeviation) = computeExpectedInertia(
-      data,
+      data.drop(predictionCol),
       featuresCol,
       numRandom,
       clusterCenters.length
@@ -143,7 +142,7 @@ object EuclideanGap {
       var randomPredictions = trainedRandomModel.transform(randomData)
       randomInertiaValues :+ math.log(
         EuclideanInertia.computeInertiaScore(
-          randomData,
+          randomPredictions,
           featuresCol,
           trainedRandomModel.clusterCenters
         )
@@ -166,8 +165,8 @@ object EuclideanGap {
     * the initial dataset's minimum and maximum values in each column
     */
   def getRandomData(data: Dataset[_]): Dataset[_] = {
-    val minValues = data.groupBy().min().head.toSeq.asInstanceOf[Array[Double]]
-    val maxValues = data.groupBy().max().head.toSeq.asInstanceOf[Array[Double]]
+    val minValues = rowToArrayOfDouble(data.groupBy().min().head)
+    val maxValues = rowToArrayOfDouble(data.groupBy().max().head)
     val randomData = data.select("*")
     val numRows = data.count.toInt
     (minValues, maxValues, data.columns).zipped.foreach { (a, b, c) =>
@@ -175,17 +174,5 @@ object EuclideanGap {
     }
     return randomData
   }
-
-  /** Computes the average over a generic iterable structure */
-  def mean[T: Numeric](xs: Iterable[T]): Double = xs.sum.toDouble / xs.size
-
-  /** Computes the variance over a generic iterable structure */
-  def variance[T: Numeric](xs: Iterable[T]): Double = {
-    val avg = mean(xs)
-    xs.map(_.toDouble).map(a => math.pow(a - avg, 2)).sum / xs.size
-  }
-
-  /** Computes the standard deviation over a generic iterable structure */
-  def stdDev[T: Numeric](xs: Iterable[T]): Double = math.sqrt(variance(xs))
 
 }
