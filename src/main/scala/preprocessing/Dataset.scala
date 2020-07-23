@@ -118,6 +118,7 @@ abstract class Dataset(
     data = data.withColumnRenamed(before, after)
   }
 
+  /** Returns the maximum number of distinct values over all columns */
   def maxDistinctValues: Int =
     data.columns
       .map(c => data.agg(countDistinct(c)).first.getLong(0))
