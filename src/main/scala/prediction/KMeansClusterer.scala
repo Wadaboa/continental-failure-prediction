@@ -1,7 +1,7 @@
 package prediction
 
-import preprocessing.{Dataset}
-import evaluation.SquaredEuclideanInertia
+import preprocessing.Dataset
+import evaluation.{EuclideanInertia, EuclideanGap}
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.evaluation.{Evaluator, ClusteringEvaluator}
@@ -14,7 +14,7 @@ protected case class KMeansClusterer(dataset: Dataset)
   override type T = KM
 
   override var metricName: String = "silhouette"
-  var distanceMeasure: String = "squaredEuclidean"
+  var distanceMeasure: String = "euclidean"
 
   override var model: KM = new KM()
     .setK(maxClusters)
@@ -56,11 +56,19 @@ protected case class KMeansClusterer(dataset: Dataset)
           .setMetricName(metricName)
           .evaluate(predictions)
       case "inertia" =>
-        SquaredEuclideanInertia.computeInertiaScore(
+        EuclideanInertia.computeInertiaScore(
           predictions,
           featuresCol,
           trainedModel.clusterCenters
         )
+      case "gap" =>
+        EuclideanGap
+          .computeGapScore(
+            predictions,
+            featuresCol,
+            trainedModel.clusterCenters
+          )
+          ._1
     }
   }
 
