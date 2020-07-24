@@ -12,7 +12,7 @@ import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.tuning.ParamGridBuilder
 import org.apache.spark.ml.classification.{DecisionTreeClassifier => DT}
 
-protected case class DecisionTreeClassifier(dataset: Dataset)
+case class DecisionTreeClassifier(dataset: Dataset)
     extends Predictor[DT](dataset) {
 
   var impurity: String = "entropy"

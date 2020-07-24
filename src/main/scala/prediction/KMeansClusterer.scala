@@ -7,8 +7,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.evaluation.{Evaluator, ClusteringEvaluator}
 import org.apache.spark.ml.clustering.{KMeans => KM, KMeansModel => KMM}
 
-protected case class KMeansClusterer(dataset: Dataset)
-    extends Clusterer(dataset) {
+case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
 
   override type M = KMM
   override type T = KM
@@ -28,40 +27,36 @@ protected case class KMeansClusterer(dataset: Dataset)
       .setPredictionCol(predictionCol)
 
   override def train(): Unit = {
-    var data = dataset.data
     model = getNewModel(minClusters)
-    trainedModel = model.fit(data)
+    trainedModel = model.fit(dataset.data)
     var gapResult = evaluate(
-      trainedModel.transform(data),
+      trainedModel.transform(dataset.data),
       metricName = "gap"
     )
-    println(gapResult)
     var previousGap: Double = gapResult(0)
-    var previousStdDev: Double = gapResult(1)
     var previousModel: KM = model
     var previousTrainedModel: KMM = trainedModel
-    var previousData: DataFrame = data
     for (k <- minClusters + 1 to maxClusters) {
-      println(k)
-      data = data.drop(predictionCol)
+      println(s"Num clusters: ${k}")
       model = getNewModel(k)
-      trainedModel = model.fit(data)
+      trainedModel = model.fit(dataset.data)
       gapResult = evaluate(
-        trainedModel.transform(data),
+        trainedModel.transform(dataset.data),
         metricName = "gap"
       )
-      println(gapResult)
       var (gap, stdDev) = (gapResult(0), gapResult(1))
+      println(s"Prev gap: ${previousGap}")
+      println(s"New gap: ${gap}")
+      println(s"New stdev: ${stdDev}")
       if (previousGap > gap - stdDev) {
         println("FOUND BEST")
-        dataset.data = data
         model = previousModel
         trainedModel = previousTrainedModel
         return
       }
       previousGap = gap
-      previousStdDev = stdDev
-      previousData = data
+      previousModel = model
+      previousTrainedModel = trainedModel
     }
   }
 
@@ -87,14 +82,15 @@ protected case class KMeansClusterer(dataset: Dataset)
           )
         )
       case "gap" =>
-        EuclideanGap
-          .computeGapScore(
-            predictions,
-            featuresCol,
-            predictionCol,
-            trainedModel.clusterCenters
-          )
-          .asInstanceOf[Array[Double]]
+        tuple2ToArray[Double](
+          EuclideanGap
+            .computeGapScore(
+              predictions,
+              featuresCol,
+              predictionCol,
+              trainedModel.clusterCenters
+            )
+        )
     }
   }
 

@@ -65,13 +65,13 @@ object Dataset {
       name: String,
       inputPath: Option[String] = None,
       inputData: Option[DataFrame] = None
-  ): Dataset = {
-    name match {
-      case "Adult" => new AdultDataset(inputPath, inputData)
-      case "Bosch" => new BoschDataset(inputPath, inputData)
-      case _       => throw new IllegalArgumentException("Unsupported dataset.")
+  ) =
+    name.capitalize match {
+      case "Adult"  => AdultDataset(inputPath, inputData)
+      case "Bosch"  => BoschDataset(inputPath, inputData)
+      case "Arrest" => ArrestDataset(inputPath, inputData)
+      case _        => throw new IllegalArgumentException("Unsupported dataset.")
     }
-  }
 
 }
 

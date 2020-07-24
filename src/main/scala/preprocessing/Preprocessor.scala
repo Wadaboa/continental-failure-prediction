@@ -5,7 +5,8 @@ import org.apache.spark.ml.feature.{
   Bucketizer,
   PCA,
   PCAModel,
-  VectorAssembler
+  VectorAssembler,
+  StandardScaler
 }
 import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
 import org.apache.spark.sql.DataFrame
@@ -125,7 +126,8 @@ object Preprocessor {
         pcaFeaturesCol,
         transformer(col(featuresCol))
       )
-      .select(pcaFeaturesCol)
+      .drop(featuresCol)
+      .withColumnRenamed(pcaFeaturesCol, featuresCol)
   }
 
   /** Bins the given column values according to the defined splits */
@@ -177,6 +179,21 @@ object Preprocessor {
     return assembler
       .setOutputCol(outputCol)
       .transform(data)
+  }
+
+  def standardize(
+      data: DataFrame,
+      inputCol: String
+  ): DataFrame = {
+    return new StandardScaler()
+      .setWithMean(true)
+      .setWithStd(true)
+      .setInputCol(inputCol)
+      .setOutputCol(s"T${inputCol}")
+      .fit(data)
+      .transform(data)
+      .drop(inputCol)
+      .withColumnRenamed(s"T${inputCol}", inputCol)
   }
 
 }

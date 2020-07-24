@@ -52,7 +52,7 @@ object AdultDataset extends DatasetProperty {
 
 }
 
-class AdultDataset(
+case class AdultDataset(
     inputPath: Option[String] = None,
     inputData: Option[DataFrame] = None
 ) extends Dataset(inputPath, inputData) {

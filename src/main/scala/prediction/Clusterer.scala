@@ -41,7 +41,9 @@ abstract class Clusterer(dataset: Dataset) {
     trainedModel = model.fit(dataset.data)
   }
 
-  /** Evaluates predictions */
+  /** Evaluates predictions by returning an array of measurements.
+    * The first value in the array is always the requested measure.
+    */
   def evaluate(
       predictions: DataFrame,
       metricName: String = this.metricName

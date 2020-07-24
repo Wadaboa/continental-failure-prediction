@@ -6,6 +6,9 @@ package object main {
   val spark =
     SparkSession.builder.appName("Production line performance").getOrCreate()
 
+  // Remove Spark's INFO logs
+  spark.sparkContext.setLogLevel("ERROR")
+
   /** Parses standard input arguments */
   def parseArgs(args: Array[String]): Map[String, String] = {
     val usage = """

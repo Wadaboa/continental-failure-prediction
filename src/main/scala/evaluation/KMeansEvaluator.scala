@@ -1,6 +1,8 @@
 package evaluation
 
-import org.apache.spark.sql.Dataset
+import preprocessing.Preprocessor
+
+import org.apache.spark.sql.{Dataset, DataFrame}
 import org.apache.spark.sql.functions.rand
 import org.apache.spark.ml.clustering.{KMeans, KMeansModel}
 import org.apache.spark.ml.linalg.{Vector, SparseVector}
@@ -101,7 +103,7 @@ object EuclideanGap {
 
   /** Computes the gap statistic score */
   def computeGapScore(
-      data: Dataset[_],
+      data: DataFrame,
       featuresCol: String,
       predictionCol: String,
       clusterCenters: Array[Vector],
@@ -111,8 +113,9 @@ object EuclideanGap {
       EuclideanInertia.computeInertiaScore(data, featuresCol, clusterCenters)
     )
     val (expectedInertia, standardDeviation) = computeExpectedInertia(
-      data.drop(predictionCol),
+      data,
       featuresCol,
+      predictionCol,
       numRandom,
       clusterCenters.length
     )
@@ -126,8 +129,9 @@ object EuclideanGap {
     * of the inertia values, calculated over the generated random data
     */
   def computeExpectedInertia(
-      data: Dataset[_],
+      data: DataFrame,
       featuresCol: String,
+      predictionCol: String,
       numRandom: Int,
       k: Int
   ): Tuple2[Double, Double] = {
@@ -135,9 +139,14 @@ object EuclideanGap {
       .setK(k)
       .setDistanceMeasure("euclidean")
       .setFeaturesCol(featuresCol)
-    var randomInertiaValues: Array[Double] = Array()
-    (1 to numRandom).foreach {
-      var randomData = getRandomData(data)
+      .setPredictionCol(predictionCol)
+    val randomInertiaValues: Array[Double] = Array()
+    for (i <- (1 to numRandom)) {
+      var randomData =
+        getRandomData(
+          data.drop(featuresCol, predictionCol)
+        )
+      randomData = Preprocessor.assemble(randomData, outputCol = featuresCol)
       var trainedRandomModel: KMeansModel = randomModel.fit(randomData)
       var randomPredictions = trainedRandomModel.transform(randomData)
       randomInertiaValues :+ math.log(
@@ -164,7 +173,7 @@ object EuclideanGap {
   /** Generates random data in a uniform distribution, based on
     * the initial dataset's minimum and maximum values in each column
     */
-  def getRandomData(data: Dataset[_]): Dataset[_] = {
+  def getRandomData(data: DataFrame): DataFrame = {
     val minValues = rowToArrayOfDouble(data.groupBy().min().head)
     val maxValues = rowToArrayOfDouble(data.groupBy().max().head)
     val randomData = data.select("*")

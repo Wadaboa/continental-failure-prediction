@@ -44,6 +44,8 @@ package object evaluation {
 
   /** Converts a DataFrame Row to Array[Double] */
   def rowToArrayOfDouble(record: Row): Array[Double] =
-    (for (i <- 2 to record.size) yield record.getInt(i).toDouble).toArray
+    (for {
+      i <- (0 until record.size).filter(x => !record.isNullAt(x))
+    } yield record.getDouble(i)).toArray
 
 }

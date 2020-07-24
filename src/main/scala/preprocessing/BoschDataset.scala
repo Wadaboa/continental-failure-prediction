@@ -12,7 +12,7 @@ object BoschDataset extends DatasetProperty {
 
 }
 
-class BoschDataset(
+case class BoschDataset(
     inputPath: Option[String] = None,
     inputData: Option[DataFrame] = None
 ) extends Dataset(inputPath, inputData) {
@@ -22,19 +22,12 @@ class BoschDataset(
   override def property = BoschDataset
 
   override def preprocess(): BoschDataset = {
-    val funcs = Seq(
-      Preprocessor.dropColumns(_: DataFrame, "Id"),
-      Preprocessor.binaryConversion(_: DataFrame),
-      Preprocessor.pca(_: DataFrame, 50)
-    )
-    return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
-      f(r)
-    }))
+    return new BoschDataset(inputData = Some(data))
   }
 
   def preprocessForClustering(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.dropColumns(_: DataFrame, "Id"),
+      Preprocessor.dropColumns(_: DataFrame, "Id", "Response"),
       Preprocessor.binaryConversion(_: DataFrame),
       Preprocessor.pca(
         _: DataFrame,

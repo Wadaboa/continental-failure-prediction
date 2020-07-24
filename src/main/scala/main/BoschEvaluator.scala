@@ -1,6 +1,6 @@
 package main
 
-import preprocessing.Dataset
+import preprocessing.{Dataset, BoschDataset}
 import prediction.{Predictor, Clusterer}
 
 object BoschEvaluator {
@@ -12,12 +12,11 @@ object BoschEvaluator {
     val classifierName = options.get("classifierName")
 
     // Create Dataset object (and read data)
-    val dataset = Dataset("Bosch", inputPath = inputPath)
+    val dataset = BoschDataset(inputPath = inputPath)
     dataset.show()
 
     // Preprocess data
-    val toCluster = dataset.preprocess()
-    toCluster.renameColumn("pcaFeatures", "features")
+    val toCluster = dataset.preprocessForClustering()
     toCluster.show()
 
     // Cluster data and print centroids
