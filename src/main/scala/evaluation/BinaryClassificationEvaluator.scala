@@ -6,7 +6,7 @@ import org.apache.spark.mllib.evaluation.MulticlassMetrics
 object MCC {
 
   /** Computes Matthew's Correlation Coefficient */
-  def computeMcc(
+  def computeMccScore(
       data: DataFrame,
       predictionCol: String,
       labelCol: String

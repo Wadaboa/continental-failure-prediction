@@ -24,17 +24,36 @@ case class BoschDataset(
   override def property = BoschDataset
 
   override def preprocess(): BoschDataset = {
-    return new BoschDataset(inputData = Some(data))
-  }
-
-  def preprocessForClustering(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.dropColumns(_: DataFrame, "Id", "Response"),
+      Preprocessor.dropColumns(_: DataFrame, "Id"),
       Preprocessor.binaryConversion(_: DataFrame),
       Preprocessor.pca(
         _: DataFrame,
         maxComponents = 50,
         explainedVariance = 0.60
+      )
+    )
+    return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
+      f(r)
+    }))
+  }
+
+  def preprocessForClustering(): BoschDataset = {
+    val funcs = Seq(
+      Preprocessor.takeSubset(_: DataFrame, percentage = Some(0.5)),
+      Preprocessor.dropColumns(_: DataFrame, "Id", "Response"),
+      Preprocessor.dropNullColumns(_: DataFrame),
+      Preprocessor.dropConstantColumns(_: DataFrame),
+      Preprocessor.binaryConversion(_: DataFrame),
+      Preprocessor.pca(
+        _: DataFrame,
+        maxComponents = 50,
+        explainedVariance = 0.95
+      ),
+      Preprocessor.fromVectorToDataframe(
+        _: DataFrame,
+        "features",
+        maintainVector = true
       )
     )
     return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>

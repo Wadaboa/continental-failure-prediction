@@ -10,10 +10,21 @@ import org.apache.spark.ml.feature.{
   VectorAssembler,
   StandardScaler
 }
+import org.apache.spark.ml.functions.vector_to_array
 import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.Column
-import org.apache.spark.sql.functions.{trim, when, length, col, udf}
+import org.apache.spark.sql.{DataFrame, Column}
+import org.apache.spark.sql.functions.{
+  trim,
+  count,
+  isnan,
+  when,
+  length,
+  col,
+  udf,
+  lit,
+  sum,
+  countDistinct
+}
 
 object Preprocessor {
 
@@ -27,9 +38,48 @@ object Preprocessor {
       case Some(value) => p = value
       case None        => p = math.random()
     }
-    val (toReturn, toDrop) =
+    val Array(toReturn, toDrop) =
       data.randomSplit(Array(p, 1 - p), seed = Utils.seed)
     return toReturn
+  }
+
+  /** Converts a DataFrame with a vector column to an expanded DataFrame,
+    * based on the given features column
+    */
+  def fromVectorToDataframe(
+      data: DataFrame,
+      vectorCol: String,
+      maintainVector: Boolean = false
+  ): DataFrame = {
+    val newData = data.select(vector_to_array(col(vectorCol)).alias("_tmp"))
+    if (maintainVector) return newData.withColumn(vectorCol, data(vectorCol))
+    return newData
+  }
+
+  /** Counts the number of null values in the given Column */
+  def countNulls(c: Column, nanAsNull: Boolean = false): Column = {
+    val pred = c.isNull and (if (nanAsNull) isnan(c) else lit(true))
+    return sum(pred.cast("integer"))
+  }
+
+  /** Removes columns with all null values */
+  def dropNullColumns(data: DataFrame): DataFrame = {
+    val counts = data.columns
+      .map(c =>
+        (c, data.agg(countNulls(col(c), nanAsNull = true)).first.getLong(0))
+      )
+    val toDrop = counts.filter(x => x._2 == 1).map(_._1)
+    Logger.info(s"Dropping null columns ${toDrop.mkString(" ")}")
+    return dropColumns(data, toDrop: _*)
+  }
+
+  /** Removes columns where all values are the same */
+  def dropConstantColumns(data: DataFrame): DataFrame = {
+    val counts = data.columns
+      .map(c => (c, data.agg(countDistinct(c)).first.getLong(0)))
+    val toDrop = counts.filter(x => x._2 == 1).map(_._1)
+    Logger.info(s"Dropping constant columns ${toDrop.mkString(" ")}")
+    return dropColumns(data, toDrop: _*)
   }
 
   /** Drops duplicated rows in the DataFrame */
@@ -45,6 +95,7 @@ object Preprocessor {
   /** Maintains only the given list of columns */
   def maintainColumns(data: DataFrame, toMaintain: Array[String]): DataFrame = {
     val toDrop = data.columns.filterNot(c => toMaintain.contains(c))
+    Logger.info(s"Dropping columns ${toDrop.mkString(" ")}")
     return dropColumns(data, toDrop: _*)
   }
 
@@ -110,6 +161,7 @@ object Preprocessor {
       explainedVariance > 0 && explainedVariance <= 1,
       "Invalid value for the explainedVariance parameter."
     )
+    require(maxComponents > 0, "Parameter maxComponents must be > 0.")
 
     // Assemble input features into a single vector
     val featuresCol = "features"

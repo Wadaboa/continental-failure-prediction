@@ -40,7 +40,7 @@ case class GradientBoostedClassifier(dataset: Dataset)
       .build()
   }
 
-  override def evaluator: Evaluator = {
+  override def defaultEvaluator: Evaluator = {
     return new MulticlassClassificationEvaluator()
       .setLabelCol(labelCol)
       .setPredictionCol(predictionCol)

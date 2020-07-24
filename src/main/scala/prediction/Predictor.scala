@@ -1,6 +1,7 @@
 package prediction
 
 import preprocessing.{Dataset}
+import evaluation.MCC
 import utils._
 
 import org.apache.spark.sql.DataFrame
@@ -12,7 +13,8 @@ import org.apache.spark.ml.feature.{
 }
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.tuning.CrossValidator
-import org.apache.spark.ml.evaluation.{Evaluator}
+import org.apache.spark.ml.evaluation.Evaluator
+import java.security.InvalidParameterException
 
 object Predictor {
 
@@ -99,7 +101,7 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
     else {
       trainedModel = new CrossValidator()
         .setEstimator(pipeline)
-        .setEvaluator(evaluator)
+        .setEvaluator(defaultEvaluator)
         .setEstimatorParamMaps(paramGrid)
         .setNumFolds(cvFolds)
         .setParallelism(cvConcurrency)
@@ -115,12 +117,18 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
       .select(labelCol, predictionCol)
   }
 
-  /** Defines the evaluator */
-  def evaluator: Evaluator
+  /** Defines the default evaluator */
+  def defaultEvaluator: Evaluator
 
   /** Evaluates predictions */
-  def evaluate(predictions: DataFrame): Double = {
-    return evaluator.evaluate(predictions)
+  def evaluate(
+      predictions: DataFrame,
+      metricName: String = this.metricName
+  ): Double = {
+    metricName match {
+      case "mcc" => MCC.computeMccScore(predictions, predictionCol, labelCol)
+      case _     => defaultEvaluator.evaluate(predictions)
+    }
   }
 
 }
