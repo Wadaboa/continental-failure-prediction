@@ -140,7 +140,7 @@ object EuclideanGap {
       .setDistanceMeasure("euclidean")
       .setFeaturesCol(featuresCol)
       .setPredictionCol(predictionCol)
-    val randomInertiaValues: Array[Double] = Array()
+    var randomInertiaValues: Array[Double] = Array()
     for (i <- (1 to numRandom)) {
       var randomData =
         getRandomData(
@@ -149,13 +149,12 @@ object EuclideanGap {
       randomData = Preprocessor.assemble(randomData, outputCol = featuresCol)
       var trainedRandomModel: KMeansModel = randomModel.fit(randomData)
       var randomPredictions = trainedRandomModel.transform(randomData)
-      randomInertiaValues :+ math.log(
-        EuclideanInertia.computeInertiaScore(
-          randomPredictions,
-          featuresCol,
-          trainedRandomModel.clusterCenters
-        )
+      var randomInertia = EuclideanInertia.computeInertiaScore(
+        randomPredictions,
+        featuresCol,
+        trainedRandomModel.clusterCenters
       )
+      randomInertiaValues = randomInertiaValues :+ math.log(randomInertia)
     }
     return (
       randomInertiaValues.sum / numRandom.toDouble,
@@ -176,10 +175,9 @@ object EuclideanGap {
   def getRandomData(data: DataFrame): DataFrame = {
     val minValues = rowToArrayOfDouble(data.groupBy().min().head)
     val maxValues = rowToArrayOfDouble(data.groupBy().max().head)
-    val randomData = data.select("*")
-    val numRows = data.count.toInt
+    var randomData = data.select("*")
     (minValues, maxValues, data.columns).zipped.foreach { (a, b, c) =>
-      randomData.withColumn(c, rand() * (b - a) + a)
+      randomData = randomData.withColumn(c, rand() * (b - a) + a)
     }
     return randomData
   }

@@ -1,4 +1,6 @@
 import org.apache.spark.sql.SparkSession
+import org.apache.log4j.Logger
+import org.apache.log4j.Level
 
 package object main {
 
@@ -7,7 +9,8 @@ package object main {
     SparkSession.builder.appName("Production line performance").getOrCreate()
 
   // Remove Spark's INFO logs
-  spark.sparkContext.setLogLevel("ERROR")
+  Logger.getLogger("org").setLevel(Level.ERROR)
+  Logger.getLogger("akka").setLevel(Level.ERROR)
 
   /** Parses standard input arguments */
   def parseArgs(args: Array[String]): Map[String, String] = {

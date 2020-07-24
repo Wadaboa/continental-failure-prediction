@@ -2,6 +2,7 @@ package prediction
 
 import preprocessing.Dataset
 import evaluation.{EuclideanInertia, EuclideanGap}
+import utils._
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.evaluation.{Evaluator, ClusteringEvaluator}
@@ -37,7 +38,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
     var previousModel: KM = model
     var previousTrainedModel: KMM = trainedModel
     for (k <- minClusters + 1 to maxClusters) {
-      println(s"Num clusters: ${k}")
+      Holder.log.info(s"Training with ${k} clusters")
       model = getNewModel(k)
       trainedModel = model.fit(dataset.data)
       gapResult = evaluate(
@@ -45,11 +46,19 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
         metricName = "gap"
       )
       var (gap, stdDev) = (gapResult(0), gapResult(1))
-      println(s"Prev gap: ${previousGap}")
-      println(s"New gap: ${gap}")
-      println(s"New stdev: ${stdDev}")
+      Holder.log.info(
+        s"Training with ${k} clusters - Previous gap score: ${previousGap}"
+      )
+      Holder.log.info(
+        s"Training with ${k} clusters - New gap score: ${gap}"
+      )
+      Holder.log.info(
+        s"Training with ${k} clusters - New gap standard deviation: ${gap}"
+      )
       if (previousGap > gap - stdDev) {
-        println("FOUND BEST")
+        Holder.log.info(
+          s"Training with ${k} clusters - Found the best number of clusters"
+        )
         model = previousModel
         trainedModel = previousTrainedModel
         return
