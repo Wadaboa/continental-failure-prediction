@@ -2,6 +2,7 @@ package main
 
 import preprocessing.Dataset
 import prediction.Predictor
+import evaluation.{ConfusionMatrix, MCC}
 import utils._
 
 object AdultEvaluator {
@@ -22,11 +23,16 @@ object AdultEvaluator {
 
     // Train the classifier and test it
     val classifier = Predictor(classifierName getOrElse "DT", preprocessed)
-    classifier.train(validate = true)
+    classifier.train(validate = false)
     val predictions = classifier.test()
     predictions.show()
     val result = classifier.evaluate(predictions)
     println(result)
+    val (tn, fp, fn, tp) =
+      ConfusionMatrix.computeConfusionMatrix(predictions, "prediction", "label")
+    val mcc = MCC.computeMcc(predictions, "prediction", "label")
+    println(mcc)
+    println(s"${tn}, ${fp}, ${fn}, ${tp}")
 
     // Stop SparkSession execution
     stopSpark()
