@@ -1,7 +1,7 @@
 package main
 
 import preprocessing.ArrestDataset
-import prediction.{Predictor, Clusterer}
+import prediction.Clusterer
 import utils._
 
 object ArrestEvaluator {
@@ -27,9 +27,9 @@ object ArrestEvaluator {
     val predictions = kmeans.trainedModel.transform(toCluster.data)
     val inertia = kmeans.evaluate(predictions, metricName = "inertia")
     val silhouette = kmeans.evaluate(predictions, metricName = "silhouette")
-    Holder.log.info(s"Cluster centers: ${clusterCenters.mkString(" ")}")
-    Holder.log.info(s"Inertia score: ${inertia(0)}")
-    Holder.log.info(s"Silhouette score: ${silhouette(0)}")
+    Logger.info(s"Cluster centers: ${clusterCenters.mkString(" ")}")
+    Logger.info(s"Inertia score: ${inertia(0)}")
+    Logger.info(s"Silhouette score: ${silhouette(0)}")
 
     // Stop SparkSession execution
     stopSpark()

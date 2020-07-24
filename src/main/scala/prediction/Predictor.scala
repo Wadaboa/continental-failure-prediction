@@ -1,6 +1,7 @@
 package prediction
 
 import preprocessing.{Dataset}
+import utils._
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.{Pipeline, PipelineStage, Transformer}
@@ -39,7 +40,7 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
   var cvConcurrency: Int = 2
 
   val Array(trainingData, testData) =
-    dataset.data.randomSplit(Array(0.8, 0.2), seed = getRandomSeed())
+    dataset.data.randomSplit(Array(0.8, 0.2), seed = Utils.seed)
   var model: T
   var trainedModel: Transformer = _
 
@@ -101,7 +102,7 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
         .setEstimatorParamMaps(paramGrid)
         .setNumFolds(cvFolds)
         .setParallelism(cvConcurrency)
-        .setSeed(getRandomSeed())
+        .setSeed(Utils.seed)
         .fit(trainingData)
     }
   }

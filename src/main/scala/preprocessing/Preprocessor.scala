@@ -1,5 +1,7 @@
 package preprocessing
 
+import utils._
+
 import org.apache.spark.ml.feature.{
   QuantileDiscretizer,
   Bucketizer,
@@ -109,7 +111,7 @@ object Preprocessor {
 
     // Get the components accounting for the given explained variance
     val variances =
-      take(fittedModel.explainedVariance.toArray, explainedVariance)
+      Utils.take(fittedModel.explainedVariance.toArray, explainedVariance)
     var numComponents = variances.length
     if (numComponents == 0) numComponents = maxComponents
 

@@ -1,6 +1,7 @@
 package prediction
 
 import preprocessing.{Dataset}
+import utils._
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.Pipeline
@@ -25,7 +26,7 @@ case class DecisionTreeClassifier(dataset: Dataset)
     .setMaxDepth(maxDepth)
     .setMaxBins(maxBins)
     .setMinInstancesPerNode(minSamplesLeaf)
-    .setSeed(getRandomSeed())
+    .setSeed(Utils.seed)
     .setLabelCol(labelCol)
     .setFeaturesCol(featuresCol)
     .setPredictionCol(predictionCol)

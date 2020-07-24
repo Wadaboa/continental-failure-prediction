@@ -1,6 +1,7 @@
 package prediction
 
 import preprocessing.{Dataset}
+import utils._
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.{Estimator, Model}

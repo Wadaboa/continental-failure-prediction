@@ -1,6 +1,7 @@
 package evaluation
 
 import preprocessing.Preprocessor
+import utils._
 
 import org.apache.spark.sql.{Dataset, DataFrame}
 import org.apache.spark.sql.functions.rand
@@ -158,7 +159,7 @@ object EuclideanGap {
     }
     return (
       randomInertiaValues.sum / numRandom.toDouble,
-      stdDev(randomInertiaValues)
+      Utils.stdDev(randomInertiaValues)
     )
   }
 
@@ -173,8 +174,8 @@ object EuclideanGap {
     * the initial dataset's minimum and maximum values in each column
     */
   def getRandomData(data: DataFrame): DataFrame = {
-    val minValues = rowToArrayOfDouble(data.groupBy().min().head)
-    val maxValues = rowToArrayOfDouble(data.groupBy().max().head)
+    val minValues = Utils.rowToArrayOfDouble(data.groupBy().min().head)
+    val maxValues = Utils.rowToArrayOfDouble(data.groupBy().max().head)
     var randomData = data.select("*")
     (minValues, maxValues, data.columns).zipped.foreach { (a, b, c) =>
       randomData = randomData.withColumn(c, rand() * (b - a) + a)

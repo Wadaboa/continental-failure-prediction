@@ -1,5 +1,7 @@
 package preprocessing
 
+import utils._
+
 import org.apache.spark.sql.{DataFrame}
 
 object BoschDataset extends DatasetProperty {

@@ -2,6 +2,7 @@ package main
 
 import preprocessing.Dataset
 import prediction.Predictor
+import utils._
 
 object AdultEvaluator {
 

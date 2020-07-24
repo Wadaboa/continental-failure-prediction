@@ -2,6 +2,7 @@ package main
 
 import preprocessing.{Dataset, BoschDataset}
 import prediction.{Predictor, Clusterer}
+import utils._
 
 object BoschEvaluator {
 

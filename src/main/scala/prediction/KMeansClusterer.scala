@@ -23,7 +23,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
     new KM()
       .setK(k)
       .setDistanceMeasure(distanceMeasure)
-      .setSeed(getRandomSeed())
+      .setSeed(Utils.seed)
       .setFeaturesCol(featuresCol)
       .setPredictionCol(predictionCol)
 
@@ -38,7 +38,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
     var previousModel: KM = model
     var previousTrainedModel: KMM = trainedModel
     for (k <- minClusters + 1 to maxClusters) {
-      Holder.log.info(s"Training with ${k} clusters")
+      Logger.info(s"Training with ${k} clusters")
       model = getNewModel(k)
       trainedModel = model.fit(dataset.data)
       gapResult = evaluate(
@@ -46,17 +46,17 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
         metricName = "gap"
       )
       var (gap, stdDev) = (gapResult(0), gapResult(1))
-      Holder.log.info(
+      Logger.info(
         s"Training with ${k} clusters - Previous gap score: ${previousGap}"
       )
-      Holder.log.info(
+      Logger.info(
         s"Training with ${k} clusters - New gap score: ${gap}"
       )
-      Holder.log.info(
+      Logger.info(
         s"Training with ${k} clusters - New gap standard deviation: ${gap}"
       )
       if (previousGap > gap - stdDev) {
-        Holder.log.info(
+        Logger.info(
           s"Training with ${k} clusters - Found the best number of clusters"
         )
         model = previousModel
@@ -91,7 +91,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
           )
         )
       case "gap" =>
-        tuple2ToArray[Double](
+        Utils.tuple2ToArray[Double](
           EuclideanGap
             .computeGapScore(
               predictions,

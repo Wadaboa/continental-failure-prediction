@@ -1,5 +1,7 @@
 package preprocessing
 
+import utils._
+
 import org.apache.spark.sql.{SparkSession, DataFrame, DataFrameReader}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.functions.countDistinct

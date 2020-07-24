@@ -1,6 +1,7 @@
 package prediction
 
 import preprocessing.{Dataset}
+import utils._
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.ml.Pipeline
@@ -26,7 +27,7 @@ case class RandomForestClassifier(dataset: Dataset)
     .setNumTrees(numTrees)
     .setMaxDepth(maxDepth)
     .setMaxBins(maxBins)
-    .setSeed(getRandomSeed())
+    .setSeed(Utils.seed)
     .setLabelCol(labelCol)
     .setFeaturesCol(featuresCol)
     .setPredictionCol(predictionCol)
