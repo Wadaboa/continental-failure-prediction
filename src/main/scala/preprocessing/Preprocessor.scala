@@ -17,6 +17,21 @@ import org.apache.spark.sql.functions.{trim, when, length, col, udf}
 
 object Preprocessor {
 
+  /** Takes a random subset of samples from the given DataFrame */
+  def takeSubset(
+      data: DataFrame,
+      percentage: Option[Double] = None
+  ): DataFrame = {
+    var p: Double = 1.0
+    percentage match {
+      case Some(value) => p = value
+      case None        => p = math.random()
+    }
+    val (toReturn, toDrop) =
+      data.randomSplit(Array(p, 1 - p), seed = Utils.seed)
+    return toReturn
+  }
+
   /** Drops duplicated rows in the DataFrame */
   def dropDuplicates(data: DataFrame): DataFrame = {
     return data.dropDuplicates()

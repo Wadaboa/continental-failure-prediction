@@ -22,9 +22,10 @@ object Predictor {
       dataset: Dataset
   ) =
     name.toUpperCase match {
-      case "DT" => DecisionTreeClassifier(dataset)
-      case "RF" => RandomForestClassifier(dataset)
-      case _    => throw new IllegalArgumentException("Unsupported predictor.")
+      case "DT"  => DecisionTreeClassifier(dataset)
+      case "RF"  => RandomForestClassifier(dataset)
+      case "GBT" => GradientBoostedClassifier(dataset)
+      case _     => throw new IllegalArgumentException("Unsupported predictor.")
     }
 
 }

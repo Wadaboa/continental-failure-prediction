@@ -11,20 +11,16 @@ import org.apache.spark.ml.evaluation.{
 }
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.tuning.ParamGridBuilder
-import org.apache.spark.ml.classification.{RandomForestClassifier => RF}
+import org.apache.spark.ml.classification.{GBTClassifier => GBT}
 
-case class RandomForestClassifier(dataset: Dataset)
-    extends Predictor[RF](dataset) {
+case class GradientBoostedClassifier(dataset: Dataset)
+    extends Predictor[GBT](dataset) {
 
-  var impurity: String = "entropy"
-  var numTrees: Int = 10
   var maxDepth: Int = 10
   var maxBins: Int = 64
   var minSamplesLeaf: Int = 3
 
-  var model = new RF()
-    .setImpurity(impurity)
-    .setNumTrees(numTrees)
+  var model = new GBT()
     .setMaxDepth(maxDepth)
     .setMaxBins(maxBins)
     .setMinInstancesPerNode(minSamplesLeaf)
@@ -35,7 +31,6 @@ case class RandomForestClassifier(dataset: Dataset)
 
   override def paramGrid: Array[ParamMap] = {
     return new ParamGridBuilder()
-      .addGrid(model.numTrees, (1 to numTrees).toArray)
       .addGrid(model.maxDepth, (1 to maxDepth).toArray)
       .addGrid(
         model.maxBins,
