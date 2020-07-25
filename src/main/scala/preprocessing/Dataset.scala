@@ -5,6 +5,7 @@ import utils._
 import org.apache.spark.sql.{DataFrame, DataFrameReader}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.functions.countDistinct
+import org.apache.spark.ml.linalg.DenseMatrix
 
 trait DatasetProperty {
 

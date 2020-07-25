@@ -143,10 +143,7 @@ object EuclideanGap {
       .setPredictionCol(predictionCol)
     var randomInertiaValues: Array[Double] = Array()
     for (i <- (1 to numRandom)) {
-      var randomData =
-        getRandomData(
-          data.drop(featuresCol, predictionCol)
-        )
+      var randomData = getRandomData(data.select(featuresCol))
       randomData = Preprocessor.assemble(randomData, outputCol = featuresCol)
       var trainedRandomModel: KMeansModel = randomModel.fit(randomData)
       var randomPredictions = trainedRandomModel.transform(randomData)
@@ -173,11 +170,13 @@ object EuclideanGap {
   /** Generates random data in a uniform distribution, based on
     * the initial dataset's minimum and maximum values in each column
     */
-  def getRandomData(data: DataFrame): DataFrame = {
-    val minValues = Utils.rowToArrayOfDouble(data.groupBy().min().head)
-    val maxValues = Utils.rowToArrayOfDouble(data.groupBy().max().head)
-    var randomData = data.select("*")
-    (minValues, maxValues, data.columns).zipped.foreach { (a, b, c) =>
+  def getRandomData(data: DataFrame, featuresCol: String): DataFrame = {
+    val newData =
+      Preprocessor.vectorToDataFrame(data, featuresCol, maintainVector = false)
+    val minValues = Utils.rowToArrayOfDouble(newData.groupBy().min().head)
+    val maxValues = Utils.rowToArrayOfDouble(newData.groupBy().max().head)
+    var randomData = newData.select("*")
+    (minValues, maxValues, newData.columns).zipped.foreach { (a, b, c) =>
       randomData = randomData.withColumn(c, rand() * (b - a) + a)
     }
     return randomData

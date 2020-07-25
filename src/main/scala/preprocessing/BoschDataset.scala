@@ -3,6 +3,7 @@ package preprocessing
 import utils._
 
 import org.apache.spark.sql.{DataFrame}
+import org.apache.spark.ml.linalg.DenseMatrix
 
 object BoschDataset extends DatasetProperty {
 
@@ -25,40 +26,35 @@ case class BoschDataset(
 
   override def preprocess(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.dropColumns(_: DataFrame, "Id"),
-      Preprocessor.binaryConversion(_: DataFrame),
-      Preprocessor.pca(
-        _: DataFrame,
-        maxComponents = 50,
-        explainedVariance = 0.60
-      )
+      Preprocessor.takeSubset(_: DataFrame, p = 0.6)
     )
     return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
       f(r)
     }))
   }
 
-  def preprocessForClustering(): BoschDataset = {
+  def preprocessCommon(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.takeSubset(_: DataFrame, p = 0.5),
-      Preprocessor.dropColumns(_: DataFrame, "Id", "Response"),
+      Preprocessor.takeSubset(_: DataFrame, p = 0.6),
+      Preprocessor.dropColumns(_: DataFrame, "Response"),
       Preprocessor.dropNullColumns(_: DataFrame),
-      Preprocessor.dropConstantColumns(_: DataFrame),
-      Preprocessor.binaryConversion(_: DataFrame),
-      Preprocessor.pca(
-        _: DataFrame,
-        maxComponents = 50,
-        explainedVariance = 0.95
-      ),
-      Preprocessor.fromVectorToDataframe(
-        _: DataFrame,
-        "features",
-        maintainVector = true
-      )
+      Preprocessor.dropConstantColumns(_: DataFrame)
     )
     return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
       f(r)
     }))
+  }
+
+  def preprocessForClustering(): Tuple2[BoschDataset, DenseMatrix] = {
+    val x = Preprocessor.binaryConversion(data, exclude = Array("Id"))
+    return Preprocessor.pca(
+      x,
+      maxComponents = 50,
+      assembleFeatures = true,
+      explainedVariance = 0.95,
+      exclude = Array("Id")
+    )
+    return (new BoschDataset(inputData = z), pc)
   }
 
 }

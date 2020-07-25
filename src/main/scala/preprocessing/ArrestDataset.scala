@@ -38,7 +38,6 @@ case class ArrestDataset(
 
   override def preprocess(): ArrestDataset = {
     val funcs = Seq(
-      Preprocessor.dropColumns(_: DataFrame, "city"),
       Preprocessor.assemble(_: DataFrame, outputCol = "features"),
       Preprocessor.standardize(_: DataFrame, inputCol = "features")
     )

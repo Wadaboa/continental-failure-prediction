@@ -97,8 +97,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
               predictions,
               featuresCol,
               predictionCol,
-              trainedModel.clusterCenters,
-              numRandom = 3
+              trainedModel.clusterCenters
             )
         )
     }

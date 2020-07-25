@@ -16,15 +16,30 @@ object BoschEvaluator {
     val dataset = BoschDataset(inputPath = inputPath)
     dataset.show()
 
-    // Preprocess data
-    val toCluster = dataset.preprocessForClustering()
+    // Apply common preprocessing
+    val preprocessed = dataset.preprocessCommon()
+    preprocessed.show()
+    val usefulFeatures = preprocessed.getColumnNames()
+    val notUsefulFeatures = dataset
+      .getColumnNames()
+      .filterNot(c =>
+        usefulFeatures
+          .contains(c) || dataset.property.getTargetColumnNames().contains(c)
+      )
+
+    usefulFeatures.foreach(println)
+
+    // Apply preprocessing for clustering
+    val (toCluster, pc) = preprocessed.preprocessForClustering()
     toCluster.show()
+
+    toCluster.data = toCluster.data.drop("Id")
 
     // Cluster data and print statistics
     val kmeans = Clusterer("KM", toCluster)
-    kmeans.maxClusters = 3
+    kmeans.maxClusters = 10
     kmeans.train()
-    val predictions = kmeans.trainedModel.transform(toCluster.data)
+    val predictions = kmeans.predict(toCluster.data)
     predictions.show()
     val clusterCenters = kmeans.trainedModel.clusterCenters
     val numClusters = clusterCenters.length
@@ -34,13 +49,19 @@ object BoschEvaluator {
     Logger.info(s"Inertia score: ${inertia(0)}")
     Logger.info(s"Silhouette score: ${silhouette(0)}")
 
-    /*
-    // Train the classifier and test it
-    val classifier = Classifier(classifierName.orNull.toString, dataset)
-    classifier.train()
-    val result = classifier.test()
-    println(result)
-     */
+    // Train different classifiers based on the clustering output
+    val splittedData = Utils.splitDataframe(predictions, kmeans.predictionCol)
+    val classifiers =
+      splittedData.map({
+        case (v, d) => {
+          var newData = dataset.data.drop(notUsefulFeatures)
+          newData = Preprocessor.assemble(toClassify.data, "features")
+          newData = Preprocessor.toComponents(newData, pc, "features")
+          val toClassify = new BoschDataset(inputData = newData)
+          (v, Predictor(classifierName.orNull.toString, d))
+        }
+
+      })
 
     // Stop SparkSession execution
     Spark.stop()

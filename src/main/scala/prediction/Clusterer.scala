@@ -42,6 +42,11 @@ abstract class Clusterer(dataset: Dataset) {
     trainedModel = model.fit(dataset.data)
   }
 
+  /** Predicts on unseen data */
+  def predict(data: DataFrame): DataFrame = {
+    return trainedModel.transform(data)
+  }
+
   /** Evaluates predictions by returning an array of measurements.
     * The first value in the array is always the requested measure.
     */

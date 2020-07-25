@@ -23,7 +23,7 @@ object ArrestEvaluator {
     val kmeans = Clusterer("KM", toCluster)
     kmeans.maxClusters = 10
     kmeans.train()
-    val predictions = kmeans.trainedModel.transform(toCluster.data)
+    val predictions = kmeans.predict(toCluster.data)
     predictions.show()
     val clusterCenters = kmeans.trainedModel.clusterCenters
     val inertia = kmeans.evaluate(predictions, metricName = "inertia")

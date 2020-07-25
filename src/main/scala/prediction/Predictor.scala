@@ -112,9 +112,12 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
 
   /** Tests the model */
   def test(): DataFrame = {
-    return trainedModel
-      .transform(testData)
-      .select(labelCol, predictionCol)
+    return predict(testData)
+  }
+
+  /** Predicts on unseen data */
+  def predict(data: DataFrame): DataFrame = {
+    return trainedModel.transform(data)
   }
 
   /** Defines the default evaluator */

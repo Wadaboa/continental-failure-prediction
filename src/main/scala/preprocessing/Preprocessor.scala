@@ -38,21 +38,6 @@ object Preprocessor {
     return toReturn
   }
 
-  /** Converts a DataFrame with a vector column to an expanded DataFrame,
-    * based on the given features column
-    */
-  def fromVectorToDataframe(
-      data: DataFrame,
-      vectorCol: String,
-      maintainVector: Boolean = false
-  ): DataFrame = {
-    val size = data.select(vectorCol).first.getAs[Vector](0).size
-    var exprs = (0 until size).map(i => col("_tmp").getItem(i).alias(s"f$i"))
-    val newData = data.select(vector_to_array(col(vectorCol)).alias("_tmp"))
-    if (maintainVector) exprs = exprs :+ col("_tmp").alias(vectorCol)
-    return newData.select(exprs: _*)
-  }
-
   /** Counts the number of null values in the given Column */
   def countNulls(c: Column, nanAsNull: Boolean = false): Column = {
     val pred = c.isNull or (if (nanAsNull) isnan(c) else lit(false))
@@ -141,20 +126,27 @@ object Preprocessor {
   }
 
   /** Converts features into binary (1 = Present value / 0 = Missing value) */
-  def binaryConversion(data: DataFrame): DataFrame = {
+  def binaryConversion(
+      data: DataFrame,
+      exclude: Array[String] = Array()
+  ): DataFrame = {
     return applyOverColumns(
       data,
-      c => when(c.isNull, 1).otherwise(0)
+      c => {
+        if (!exclude.contains(c)) when(c.isNull, 1).otherwise(0)
+        else c
+      }
     )
   }
 
   /** Perform Principal Component Analysis to reduce the number of features */
   def pca(
-      data: DataFrame,
+      inputData: DataFrame,
       maxComponents: Int,
       assembleFeatures: Boolean = true,
-      explainedVariance: Double = 0.95
-  ): DataFrame = {
+      explainedVariance: Double = 0.95,
+      exclude: Array[String] = Array()
+  ): Tuple2[DataFrame, DenseMatrix] = {
     require(
       explainedVariance > 0 && explainedVariance <= 1,
       "Invalid value for the explainedVariance parameter."
@@ -164,37 +156,79 @@ object Preprocessor {
     // Assemble input features into a single vector
     val featuresCol = "features"
     val pcaFeaturesCol = "pcaFeatures"
-    var inputData: DataFrame = data
-    if (assembleFeatures) inputData = assemble(data, outputCol = featuresCol)
+    var data: DataFrame = inputData
+    if (assembleFeatures)
+      data = assemble(
+        inputData,
+        outputCol = featuresCol,
+        inputCols = Some(data.columns.filterNot(c => exclude.contains(c)))
+      )
+
+    // Standardize features to zero-mean
+    data = standardize(data, pcaFeaturesCol)
 
     // Perform PCA
     val pca = new PCA()
       .setInputCol(featuresCol)
       .setOutputCol(pcaFeaturesCol)
       .setK(maxComponents)
-    val fittedModel = pca.fit(inputData)
+    val fittedModel = pca.fit(data)
 
     // Get the components accounting for the given explained variance
     val variances =
       Utils.take(fittedModel.explainedVariance.toArray, explainedVariance)
     var numComponents = variances.length
     if (numComponents == 0) numComponents = maxComponents
+    Logger.info(
+      s"The number of principal components explaining ${explainedVariance * 100}% of the variance is ${numComponents}"
+    )
 
     // Apply transformation
     val numRows = fittedModel.pc.numRows
     val numCols = fittedModel.pc.numCols
     val values = fittedModel.pc.values.clone().slice(0, numRows * numComponents)
     val pc = new DenseMatrix(numRows, numComponents, values)
+    val comp = toComponents(data, pc, featuresCol, exclude)
+    return (
+      vectorToDataFrame(comp, featuresCol, maintainVector = true),
+      pc
+    )
+  }
+
+  /** Converts a DataFrame with a vector column to an expanded DataFrame,
+    * based on the given features column
+    */
+  def vectorToDataFrame(
+      data: DataFrame,
+      vectorCol: String,
+      maintainVector: Boolean = false
+  ): DataFrame = {
+    val otherCols = data.columns.filterNot(c => c == vectorCol)
+    val size = data.select(vectorCol).first.getAs[Vector](0).size
+    var exprs = (0 until size).map(i => col("_tmp").getItem(i).alias(s"f$i"))
+    exprs :+ otherCols.map(c => col(c))
+    val newData = data.select(vector_to_array(col(vectorCol)).alias("_tmp"))
+    if (maintainVector) exprs = exprs :+ col("_tmp").alias(vectorCol)
+    return newData.select(exprs: _*)
+  }
+
+  /** Transform features to principal components */
+  def toComponents(
+      data: DataFrame,
+      pc: DenseMatrix,
+      featuresCol: String,
+      maintain: Array[String] = Array()
+  ): DataFrame = {
     val transposed = pc.transpose
     val transformer = udf { vector: Vector => transposed.multiply(vector) }
-
-    return inputData
+    return data
       .withColumn(
-        pcaFeaturesCol,
+        "_tmp",
         transformer(col(featuresCol))
       )
       .drop(featuresCol)
-      .withColumnRenamed(pcaFeaturesCol, featuresCol)
+      .withColumnRenamed("_tmp", featuresCol)
+      .select(featuresCol, maintain: _*)
   }
 
   /** Bins the given column values according to the defined splits */
@@ -235,8 +269,8 @@ object Preprocessor {
   /** Assembles the given columns (or every column) into a single one */
   def assemble(
       data: DataFrame,
-      inputCols: Option[Array[String]] = None,
-      outputCol: String
+      outputCol: String,
+      inputCols: Option[Array[String]] = None
   ): DataFrame = {
     var assembler = new VectorAssembler()
     inputCols match {
@@ -248,13 +282,16 @@ object Preprocessor {
       .transform(data)
   }
 
+  /** Applies features standardization (zero mean and unit variance) */
   def standardize(
       data: DataFrame,
-      inputCol: String
+      inputCol: String,
+      withMean: Boolean = true,
+      withStd: Boolean = true
   ): DataFrame = {
     return new StandardScaler()
-      .setWithMean(true)
-      .setWithStd(true)
+      .setWithMean(withMean)
+      .setWithStd(withStd)
       .setInputCol(inputCol)
       .setOutputCol(s"T${inputCol}")
       .fit(data)

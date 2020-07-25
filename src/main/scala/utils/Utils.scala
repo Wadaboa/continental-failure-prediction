@@ -7,6 +7,7 @@ import org.apache.log4j.{Logger => L}
 import org.apache.spark.sql.{Row, DataFrame, SparkSession}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types.{StructType, DoubleType, StructField}
+import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
 
 object Logger extends Serializable {
 
@@ -64,7 +65,7 @@ object Utils {
   /** Generates a DataFrame with the specified number of rows and columns,
     * containing random double values
     */
-  def randomDataframe(
+  def randomDataFrame(
       numRows: Int,
       numCols: Int,
       range: Tuple2[Double, Double] = (0, 100)
@@ -87,12 +88,12 @@ object Utils {
     * Returns an Array[DataFrame], in which each table contains a different
     * value over the split column.
     */
-  def splitDataframe(
+  def splitDataFrame(
       data: DataFrame,
       splitCol: String
-  ): Array[DataFrame] = {
+  ): Map[Int, Array[DataFrame]] = {
     val states = data.select(splitCol).distinct.collect.flatMap(_.toSeq)
-    return states.map(state => data.where(col(splitCol) === state))
+    return states.map(state => data.where(col(splitCol) === state)).toMap
   }
 
 }
