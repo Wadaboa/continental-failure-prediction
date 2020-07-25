@@ -144,6 +144,7 @@ object Preprocessor {
       inputData: DataFrame,
       maxComponents: Int,
       assembleFeatures: Boolean = true,
+      standardizeFeatures: Boolean = true,
       explainedVariance: Double = 0.95,
       exclude: Array[String] = Array()
   ): Tuple2[DataFrame, DenseMatrix] = {
@@ -164,8 +165,8 @@ object Preprocessor {
         inputCols = Some(data.columns.filterNot(c => exclude.contains(c)))
       )
 
-    // Standardize features to zero-mean
-    data = standardize(data, pcaFeaturesCol)
+    // Standardize features to zero mean, unit variance
+    if (standardizeFeatures) data = standardize(data, pcaFeaturesCol)
 
     // Perform PCA
     val pca = new PCA()

@@ -26,7 +26,17 @@ case class BoschDataset(
 
   override def preprocess(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.takeSubset(_: DataFrame, p = 0.6)
+      Preprocessor.takeSubset(_: DataFrame, p = 0.6),
+      Preprocessor
+        .pca(
+          _: DataFrame,
+          maxComponents = 50,
+          assembleFeatures = true,
+          standardizeFeatures = true,
+          explainedVariance = 0.95,
+          exclude = Array("Id", "Response")
+        )
+        ._1
     )
     return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
       f(r)
@@ -35,26 +45,28 @@ case class BoschDataset(
 
   def preprocessCommon(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.takeSubset(_: DataFrame, p = 0.6),
-      Preprocessor.dropColumns(_: DataFrame, "Response"),
       Preprocessor.dropNullColumns(_: DataFrame),
       Preprocessor.dropConstantColumns(_: DataFrame)
     )
-    return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
+    return BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
       f(r)
     }))
   }
 
   def preprocessForClustering(): Tuple2[BoschDataset, DenseMatrix] = {
-    val x = Preprocessor.binaryConversion(data, exclude = Array("Id"))
-    return Preprocessor.pca(
+    val x = Preprocessor.binaryConversion(
+      data,
+      exclude = Array("Id", "Response")
+    )
+    val (y, pc) = Preprocessor.pca(
       x,
       maxComponents = 50,
       assembleFeatures = true,
+      standardizeFeatures = false,
       explainedVariance = 0.95,
-      exclude = Array("Id")
+      exclude = Array("Id", "Response")
     )
-    return (new BoschDataset(inputData = z), pc)
+    return (BoschDataset(inputData = Some(y)), pc)
   }
 
 }

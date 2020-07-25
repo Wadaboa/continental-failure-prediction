@@ -143,7 +143,7 @@ object EuclideanGap {
       .setPredictionCol(predictionCol)
     var randomInertiaValues: Array[Double] = Array()
     for (i <- (1 to numRandom)) {
-      var randomData = getRandomData(data.select(featuresCol))
+      var randomData = getRandomData(data.select(featuresCol), featuresCol)
       randomData = Preprocessor.assemble(randomData, outputCol = featuresCol)
       var trainedRandomModel: KMeansModel = randomModel.fit(randomData)
       var randomPredictions = trainedRandomModel.transform(randomData)

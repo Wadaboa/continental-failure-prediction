@@ -51,16 +51,10 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
   def getModel(): T = model
 
   /** Defines model-specific data transformations */
-  def pipeline: Pipeline = {
+  def pipeline(assemble: Boolean = true): Pipeline = {
     // Get column and target names
     val target = dataset.property.getTargetColumnNames()(0)
     val cols = dataset.getColumnNames().filter(c => c != target)
-
-    // Index columns
-    val columnsIndexer = new StringIndexer()
-      .setInputCols(cols)
-      .setOutputCols(cols.map("indexed-" + _))
-      .fit(dataset.data)
 
     // Index labels
     val labelIndexer = new StringIndexer()
@@ -68,39 +62,51 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
       .setOutputCol(labelCol)
       .fit(dataset.data)
 
-    // Put every feature into a single vector
-    val featuresAssembler = new VectorAssembler()
-      .setInputCols(columnsIndexer.getOutputCols)
-      .setOutputCol(featuresCol)
-
     // Convert index labels back to original labels
     val labelConverter = new IndexToString()
       .setInputCol(predictionCol)
       .setOutputCol("predicted-" + target)
       .setLabels(labelIndexer.labels)
 
-    // Define the pipeline
-    return new Pipeline()
-      .setStages(
-        Array(
-          columnsIndexer,
-          labelIndexer,
-          featuresAssembler,
-          getModel(),
-          labelConverter
+    if (assemble) {
+      // Index columns
+      val columnsIndexer = new StringIndexer()
+        .setInputCols(cols)
+        .setOutputCols(cols.map("indexed-" + _))
+        .fit(dataset.data)
+
+      // Put every feature into a single vector
+      val featuresAssembler = new VectorAssembler()
+        .setInputCols(columnsIndexer.getOutputCols)
+        .setOutputCol(featuresCol)
+
+      // Define the pipeline
+      return new Pipeline()
+        .setStages(
+          Array(
+            columnsIndexer,
+            labelIndexer,
+            featuresAssembler,
+            getModel(),
+            labelConverter
+          )
         )
-      )
+    }
+
+    return new Pipeline().setStages(
+      Array(labelIndexer, getModel(), labelConverter)
+    )
   }
 
   /** Defines the parameter grid to use in cross-validation */
   def paramGrid: Array[ParamMap]
 
   /** Trains the model */
-  def train(validate: Boolean = false): Unit = {
-    if (!validate) trainedModel = pipeline.fit(trainingData)
+  def train(assemble: Boolean = true, validate: Boolean = false): Unit = {
+    if (!validate) trainedModel = pipeline(assemble).fit(trainingData)
     else {
       trainedModel = new CrossValidator()
-        .setEstimator(pipeline)
+        .setEstimator(pipeline(assemble))
         .setEvaluator(defaultEvaluator)
         .setEstimatorParamMaps(paramGrid)
         .setNumFolds(cvFolds)

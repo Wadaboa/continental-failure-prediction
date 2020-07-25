@@ -56,6 +56,10 @@ object Utils {
       i <- (0 until record.size).filter(x => !record.isNullAt(x))
     } yield record.getDouble(i)).toArray
 
+  /** Converts a DataFrame Column to Array[Double] */
+  def colToArrayOfDouble(data: DataFrame, column: String): Array[Double] =
+    data.select(column).collect.map(_.getDouble(0))
+
   /** Defines the seed to be used with randomized operations */
   def seed: Int = 42
 
@@ -85,15 +89,17 @@ object Utils {
   }
 
   /** Splits the given DataFrame based on a specific column.
-    * Returns an Array[DataFrame], in which each table contains a different
-    * value over the split column.
+    * Returns a Map[Int, DataFrame], in which each table contains a different
+    * value over the split column and that value is used as the map key.
     */
   def splitDataFrame(
       data: DataFrame,
       splitCol: String
-  ): Map[Int, Array[DataFrame]] = {
+  ): Map[Any, DataFrame] = {
     val states = data.select(splitCol).distinct.collect.flatMap(_.toSeq)
-    return states.map(state => data.where(col(splitCol) === state)).toMap
+    return states
+      .map(state => (state -> data.where(col(splitCol) <=> state)))
+      .toMap
   }
 
 }
