@@ -2,7 +2,7 @@ package preprocessing
 
 import utils._
 
-import org.apache.spark.sql.{SparkSession, DataFrame, DataFrameReader}
+import org.apache.spark.sql.{DataFrame, DataFrameReader}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.functions.countDistinct
 
@@ -39,9 +39,7 @@ trait DatasetProperty {
   /** Loads the dataset */
   def load(inputPath: String): DataFrame = {
     // Prepare the DataFrameReader
-    var reader: DataFrameReader = SparkSession.builder
-      .getOrCreate()
-      .read
+    var reader: DataFrameReader = Spark.session.read
 
     // Check if a schema is provided (otherwise try to infer it)
     getSchema() match {

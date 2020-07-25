@@ -1,12 +1,6 @@
-import org.apache.spark.sql.SparkSession
-import org.apache.log4j.Logger
-import org.apache.log4j.Level
+import org.apache.log4j.{Logger, Level}
 
 package object main {
-
-  // Create shared SparkSession object
-  val spark =
-    SparkSession.builder.appName("Production line performance").getOrCreate()
 
   // Remove Spark's INFO logs
   Logger.getLogger("org").setLevel(Level.ERROR)
@@ -44,8 +38,5 @@ package object main {
     )
     return nextOption(defaultOptions, arglist)
   }
-
-  /** Stops Spark execution */
-  def stopSpark(): Unit = spark.stop()
 
 }

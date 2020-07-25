@@ -31,7 +31,7 @@ object AdultEvaluator {
     Logger.info(s"MCC score: ${mcc}")
 
     // Stop SparkSession execution
-    stopSpark()
+    Spark.stop()
   }
 
 }

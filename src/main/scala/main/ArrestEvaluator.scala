@@ -23,8 +23,9 @@ object ArrestEvaluator {
     val kmeans = Clusterer("KM", toCluster)
     kmeans.maxClusters = 10
     kmeans.train()
-    val clusterCenters = kmeans.trainedModel.clusterCenters
     val predictions = kmeans.trainedModel.transform(toCluster.data)
+    predictions.show()
+    val clusterCenters = kmeans.trainedModel.clusterCenters
     val inertia = kmeans.evaluate(predictions, metricName = "inertia")
     val silhouette = kmeans.evaluate(predictions, metricName = "silhouette")
     Logger.info(s"Cluster centers: ${clusterCenters.mkString(" ")}")
@@ -32,7 +33,7 @@ object ArrestEvaluator {
     Logger.info(s"Silhouette score: ${silhouette(0)}")
 
     // Stop SparkSession execution
-    stopSpark()
+    Spark.stop()
   }
 
 }

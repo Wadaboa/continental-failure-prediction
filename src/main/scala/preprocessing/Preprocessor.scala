@@ -31,13 +31,8 @@ object Preprocessor {
   /** Takes a random subset of samples from the given DataFrame */
   def takeSubset(
       data: DataFrame,
-      percentage: Option[Double] = None
+      p: Double = 0.5
   ): DataFrame = {
-    var p: Double = 1.0
-    percentage match {
-      case Some(value) => p = value
-      case None        => p = math.random()
-    }
     val Array(toReturn, toDrop) =
       data.randomSplit(Array(p, 1 - p), seed = Utils.seed)
     return toReturn
@@ -51,24 +46,27 @@ object Preprocessor {
       vectorCol: String,
       maintainVector: Boolean = false
   ): DataFrame = {
+    val size = data.select(vectorCol).first.getAs[Vector](0).size
+    var exprs = (0 until size).map(i => col("_tmp").getItem(i).alias(s"f$i"))
     val newData = data.select(vector_to_array(col(vectorCol)).alias("_tmp"))
-    if (maintainVector) return newData.withColumn(vectorCol, data(vectorCol))
-    return newData
+    if (maintainVector) exprs = exprs :+ col("_tmp").alias(vectorCol)
+    return newData.select(exprs: _*)
   }
 
   /** Counts the number of null values in the given Column */
   def countNulls(c: Column, nanAsNull: Boolean = false): Column = {
-    val pred = c.isNull and (if (nanAsNull) isnan(c) else lit(true))
+    val pred = c.isNull or (if (nanAsNull) isnan(c) else lit(false))
     return sum(pred.cast("integer"))
   }
 
   /** Removes columns with all null values */
   def dropNullColumns(data: DataFrame): DataFrame = {
+    val numRows = data.count.toInt
     val counts = data.columns
       .map(c =>
         (c, data.agg(countNulls(col(c), nanAsNull = true)).first.getLong(0))
       )
-    val toDrop = counts.filter(x => x._2 == 1).map(_._1)
+    val toDrop = counts.filter(x => x._2 == numRows).map(_._1)
     Logger.info(s"Dropping null columns ${toDrop.mkString(" ")}")
     return dropColumns(data, toDrop: _*)
   }

@@ -40,7 +40,7 @@ case class BoschDataset(
 
   def preprocessForClustering(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.takeSubset(_: DataFrame, percentage = Some(0.5)),
+      Preprocessor.takeSubset(_: DataFrame, p = 0.5),
       Preprocessor.dropColumns(_: DataFrame, "Id", "Response"),
       Preprocessor.dropNullColumns(_: DataFrame),
       Preprocessor.dropConstantColumns(_: DataFrame),

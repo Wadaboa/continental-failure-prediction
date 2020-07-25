@@ -12,21 +12,6 @@ object BoschEvaluator {
     val inputPath = options.get("inputPath")
     val classifierName = options.get("classifierName")
 
-    import spark.implicits._
-    val data = Seq(
-      ("Java", "20000", null, 1),
-      ("Python", "100000", null, 1),
-      ("Scala", "3000", null, 1),
-      ("Rust", null, null, 1),
-      ("R", null, null, 1)
-    )
-    val rdd = spark.sparkContext.parallelize(data)
-    val df = rdd.toDF()
-    df.show()
-    val x = Preprocessor.dropNullColumns(df)
-    x.show()
-
-    /*
     // Create Dataset object (and read data)
     val dataset = BoschDataset(inputPath = inputPath)
     dataset.show()
@@ -35,18 +20,20 @@ object BoschEvaluator {
     val toCluster = dataset.preprocessForClustering()
     toCluster.show()
 
-
-    // Cluster data and print centroids
+    // Cluster data and print statistics
     val kmeans = Clusterer("KM", toCluster)
     kmeans.maxClusters = 3
     kmeans.train()
-    kmeans.trainedModel.clusterCenters.foreach(println)
-    val predictions = kmeans.trainedModel.transform(dataset.data)
+    val predictions = kmeans.trainedModel.transform(toCluster.data)
+    predictions.show()
+    val clusterCenters = kmeans.trainedModel.clusterCenters
+    val numClusters = clusterCenters.length
+    val inertia = kmeans.evaluate(predictions, metricName = "inertia")
     val silhouette = kmeans.evaluate(predictions, metricName = "silhouette")
-    println(silhouette)
-    val gap = kmeans.evaluate(predictions, metricName = "gap")
-    println(gap)
-     */
+    Logger.info(s"Cluster centers: ${clusterCenters.mkString(" ")}")
+    Logger.info(s"Inertia score: ${inertia(0)}")
+    Logger.info(s"Silhouette score: ${silhouette(0)}")
+
     /*
     // Train the classifier and test it
     val classifier = Classifier(classifierName.orNull.toString, dataset)
@@ -56,7 +43,7 @@ object BoschEvaluator {
      */
 
     // Stop SparkSession execution
-    stopSpark()
+    Spark.stop()
   }
 
 }

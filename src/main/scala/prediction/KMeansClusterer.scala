@@ -57,7 +57,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
       )
       if (previousGap > gap - stdDev) {
         Logger.info(
-          s"Training with ${k} clusters - Found the best number of clusters"
+          s"Training with ${k} clusters - Found the best number of clusters (${k - 1})"
         )
         model = previousModel
         trainedModel = previousTrainedModel
@@ -97,7 +97,8 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
               predictions,
               featuresCol,
               predictionCol,
-              trainedModel.clusterCenters
+              trainedModel.clusterCenters,
+              numRandom = 3
             )
         )
     }
