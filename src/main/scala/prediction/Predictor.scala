@@ -5,14 +5,14 @@ import evaluation.MCC
 import utils._
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.ml.{Pipeline, PipelineStage, Transformer}
+import org.apache.spark.ml.{Pipeline, PipelineStage, PipelineModel, Transformer}
 import org.apache.spark.ml.feature.{
   StringIndexer,
   VectorAssembler,
   IndexToString
 }
 import org.apache.spark.ml.param.ParamMap
-import org.apache.spark.ml.tuning.CrossValidator
+import org.apache.spark.ml.tuning.{CrossValidator, CrossValidatorModel}
 import org.apache.spark.ml.evaluation.Evaluator
 import java.security.InvalidParameterException
 
@@ -138,6 +138,25 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
       case "mcc" => MCC.computeMccScore(predictions, predictionCol, labelCol)
       case _     => defaultEvaluator.evaluate(predictions)
     }
+  }
+
+  /** Saves the trained model to disk */
+  def save(path: String): Unit = {
+    trainedModel match {
+      case c: CrossValidatorModel =>
+        trainedModel
+          .asInstanceOf[CrossValidatorModel]
+          .bestModel
+          .asInstanceOf[PipelineModel]
+          .save(path)
+      case p: PipelineModel =>
+        trainedModel.asInstanceOf[PipelineModel].save(path)
+    }
+  }
+
+  /** Loads the trained model from disk */
+  def load(path: String): Unit = {
+    trainedModel = PipelineModel.load(path).asInstanceOf[Transformer]
   }
 
 }

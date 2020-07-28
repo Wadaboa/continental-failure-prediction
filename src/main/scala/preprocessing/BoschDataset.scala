@@ -24,29 +24,7 @@ case class BoschDataset(
 
   override def property = BoschDataset
 
-  override def preprocess(): BoschDataset = {
-    val funcs = Seq(
-      Preprocessor.nullToValues(
-        _: DataFrame,
-        method = "mean",
-        exclude = Array("Id", "Response")
-      ),
-      Preprocessor
-        .pca(
-          _: DataFrame,
-          maxComponents = 50,
-          assembleFeatures = true,
-          standardizeFeatures = true,
-          explainedVariance = 0.95,
-          exclude = Array("Id", "Response")
-        )
-        ._1
-    )
-    return new BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
-      f(r)
-    }))
-  }
-
+  /** Common preprocessing for both clustering and classification steps */
   def preprocessCommon(): BoschDataset = {
     val funcs = Seq(
       Preprocessor.dropNullColumns(_: DataFrame),
@@ -57,6 +35,7 @@ case class BoschDataset(
     }))
   }
 
+  /** Preprocesses data for clustering */
   def preprocessForClustering(): Tuple2[BoschDataset, DenseMatrix] = {
     val x = Preprocessor.binaryConversion(
       data,
@@ -67,6 +46,24 @@ case class BoschDataset(
       maxComponents = 50,
       assembleFeatures = true,
       standardizeFeatures = false,
+      explainedVariance = 0.95,
+      exclude = Array("Id", "Response")
+    )
+    return (BoschDataset(inputData = Some(y)), pc)
+  }
+
+  /** Preprocesses data for classification */
+  def preprocessForClassification(): Tuple2[BoschDataset, DenseMatrix] = {
+    val x = Preprocessor.nullToValues(
+      data,
+      method = "mean",
+      exclude = Array("Id", "Response")
+    )
+    val (y, pc) = Preprocessor.pca(
+      x,
+      maxComponents = 50,
+      assembleFeatures = true,
+      standardizeFeatures = true,
       explainedVariance = 0.95,
       exclude = Array("Id", "Response")
     )

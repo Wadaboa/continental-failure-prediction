@@ -103,4 +103,12 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
     }
   }
 
+  override def save(path: String): Unit = {
+    trainedModel.asInstanceOf[KMM].save(path)
+  }
+
+  override def load(path: String): Unit = {
+    trainedModel = KMM.load(path)
+  }
+
 }

@@ -11,6 +11,7 @@ object AdultEvaluator {
     val options = parseArgs(args)
     val inputPath = options.get("inputPath")
     val classifierName = options.get("classifierName")
+    val modelFolder = options.get("modelFolder")
 
     // Create Dataset object (and read data)
     val dataset = AdultDataset(inputPath = inputPath)
@@ -22,13 +23,19 @@ object AdultEvaluator {
 
     // Train the classifier and test it
     val classifier = Predictor(classifierName getOrElse "DT", preprocessed)
-    classifier.train(validate = false)
+    val modelFile =
+      s"${modelFolder.orNull.toString}/adult-${classifierName.orNull.toLowerCase}.ml"
+    if (fileExists(modelFile)) classifier.load(modelFile)
+    else classifier.train(validate = true)
     val predictions = classifier.test()
     predictions.show()
-    val accuracy = classifier.evaluate(predictions, metricName = "accuracy")
-    val mcc = classifier.evaluate(predictions, metricName = "mcc")
+    var accuracy = classifier.evaluate(predictions, metricName = "accuracy")
+    var mcc = classifier.evaluate(predictions, metricName = "mcc")
     Logger.info(s"Accuracy score: ${accuracy}")
     Logger.info(s"MCC score: ${mcc}")
+
+    // Save the model
+    if (!fileExists(modelFile)) classifier.save(modelFile)
 
     // Stop SparkSession execution
     Spark.stop()

@@ -1,10 +1,10 @@
 package main
 
-import preprocessing.{BoschDataset, Preprocessor}
+import preprocessing.BoschDataset
 import prediction.{Predictor, Clusterer}
 import utils._
 
-import org.apache.spark.sql.functions.col
+import org.apache.spark.ml.linalg.DenseMatrix
 
 object BoschEvaluator {
 
@@ -23,7 +23,7 @@ object BoschEvaluator {
     preprocessed.show()
 
     // Apply preprocessing for clustering
-    val (toCluster, pc) = preprocessed.preprocessForClustering()
+    val (toCluster, clustersPc) = preprocessed.preprocessForClustering()
     toCluster.show()
 
     // Cluster data and print statistics
@@ -42,12 +42,15 @@ object BoschEvaluator {
 
     // Define classifiers based on the clustering output
     val splittedData = Utils.splitDataFrame(predictions, kmeans.predictionCol)
+    var classifiersPc: Map[Int, DenseMatrix] = Map()
     val classifiers: Map[Int, Predictor[_]] =
       splittedData.map({
         case (v, d) => {
           var newData = preprocessed.data
             .join(d.select("Id"), Seq("Id"), "inner")
-          var toClassify = BoschDataset(inputData = Some(newData)).preprocess()
+          var (toClassify, pc) = BoschDataset(inputData = Some(newData))
+            .preprocessForClassification()
+          classifiersPc += (v.asInstanceOf[Int] -> pc)
           (
             v.asInstanceOf[Int],
             Predictor(classifierName.orNull.toString, toClassify)

@@ -36,9 +36,14 @@ case class ArrestDataset(
 
   override def property = ArrestDataset
 
-  override def preprocess(): ArrestDataset = {
+  /** Assembles and standardizes features */
+  def preprocess(): ArrestDataset = {
     val funcs = Seq(
-      Preprocessor.assemble(_: DataFrame, outputCol = "features"),
+      Preprocessor.assemble(
+        _: DataFrame,
+        outputCol = "features",
+        inputCols = Some(data.columns.filterNot(c => c == "city"))
+      ),
       Preprocessor.standardize(_: DataFrame, inputCol = "features")
     )
     return new ArrestDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>

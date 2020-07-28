@@ -84,7 +84,7 @@ object Preprocessor {
   /** Maintains only the given list of columns */
   def maintainColumns(data: DataFrame, toMaintain: Array[String]): DataFrame = {
     val toDrop = data.columns.filterNot(c => toMaintain.contains(c))
-    Logger.info(s"Dropping columns ${toDrop.mkString(" ")}")
+    Logger.info(s"Dropping columns: ${toDrop.mkString("[", ", ", "]")}")
     return dropColumns(data, toDrop: _*)
   }
 

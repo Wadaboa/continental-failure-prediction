@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.IndexToString","timestamp":1595951115433,"sparkVersion":"3.0.0","uid":"idxToStr_8218519aea84","paramMap":{"labels":["<=50K",">50K"],"outputCol":"predicted-high-income","inputCol":"prediction"},"defaultParamMap":{"outputCol":"idxToStr_8218519aea84__output"}}

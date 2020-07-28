@@ -9,7 +9,7 @@ import org.apache.spark.ml.linalg.DenseMatrix
 
 trait DatasetProperty {
 
-  /** CSV dataset delimiter */
+  // CSV dataset delimiter
   val delimiter = ","
 
   /** Specifies discrete columns */
@@ -101,9 +101,6 @@ abstract class Dataset(
       }
     }
   }
-
-  /** Applies a sequence of pre-processing functions to the given DataFrame */
-  def preprocess(): T
 
   /** Returns the DataFrame's column names */
   def getColumnNames(): Array[String] = data.columns.toArray

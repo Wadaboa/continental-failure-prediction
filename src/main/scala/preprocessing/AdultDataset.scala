@@ -63,7 +63,8 @@ case class AdultDataset(
 
   override def property = AdultDataset
 
-  override def preprocess(): AdultDataset = {
+  /** Performs data discretization and transforms null values */
+  def preprocess(): AdultDataset = {
     val funcs = Seq(
       Preprocessor.trimValues(_: DataFrame),
       Preprocessor

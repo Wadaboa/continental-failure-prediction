@@ -55,4 +55,10 @@ abstract class Clusterer(dataset: Dataset) {
       metricName: String = this.metricName
   ): Array[Double]
 
+  /** Saves the trained model to disk */
+  def save(path: String): Unit
+
+  /** Loads the trained model from disk */
+  def load(path: String): Unit
+
 }
