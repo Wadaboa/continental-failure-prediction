@@ -45,9 +45,8 @@ object BoschEvaluator {
     val classifiers: Map[Int, Predictor[_]] =
       splittedData.map({
         case (v, d) => {
-          var newData = preprocessed.data.filter(
-            col("Id").isin(Utils.colToArrayOfDouble(d, "Id"): _*)
-          )
+          var newData = preprocessed.data
+            .join(d.select("Id"), Seq("Id"), "inner")
           var toClassify = BoschDataset(inputData = Some(newData)).preprocess()
           (
             v.asInstanceOf[Int],
@@ -62,10 +61,12 @@ object BoschEvaluator {
         c.train(assemble = false)
         var predictions = c.test()
         predictions.show()
-        var accuracy = c.evaluate(predictions, metricName = "mcc")
+        var accuracy = c.evaluate(predictions, metricName = "accuracy")
+        var fscore = c.evaluate(predictions, metricName = "f1")
         var mcc = c.evaluate(predictions, metricName = "mcc")
         var auroc = c.evaluate(predictions, metricName = "areaUnderRoc")
         Logger.info(s"Accuracy score for cluster #${v}: ${accuracy}")
+        Logger.info(s"F1 score for cluster #${v}: ${fscore}")
         Logger.info(s"MCC score for cluster #${v}: ${mcc}")
         Logger.info(s"Area under ROC score for cluster #${v}: ${auroc}")
       }

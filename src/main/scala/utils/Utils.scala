@@ -5,7 +5,12 @@ import Numeric.Implicits._
 
 import org.apache.log4j.{Logger => L}
 import org.apache.spark.sql.{Row, DataFrame, SparkSession}
-import org.apache.spark.sql.functions.{col, monotonically_increasing_id}
+import org.apache.spark.sql.functions.{
+  col,
+  monotonically_increasing_id,
+  when,
+  rand
+}
 import org.apache.spark.sql.types.{StructType, DoubleType, StructField}
 import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
 
@@ -80,6 +85,11 @@ object Utils {
     val df1 = dataOne.withColumn("_tmp_id", monotonically_increasing_id())
     val df2 = dataTwo.withColumn("_tmp_id", monotonically_increasing_id())
     return df1.join(df2, ("_tmp_id")).drop("_tmp_id")
+  }
+
+  /** Adds a column with random 0/1 values to the given DataFrame */
+  def addRandomCol(data: DataFrame, colName: String): DataFrame = {
+    return data.withColumn(colName, when(rand() > 0.5, 1).otherwise(0))
   }
 
   /** Generates a DataFrame with the specified number of rows and columns,

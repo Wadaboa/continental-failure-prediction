@@ -26,6 +26,11 @@ case class BoschDataset(
 
   override def preprocess(): BoschDataset = {
     val funcs = Seq(
+      Preprocessor.nullToValues(
+        _: DataFrame,
+        method = "mean",
+        exclude = Array("Id", "Response")
+      ),
       Preprocessor
         .pca(
           _: DataFrame,

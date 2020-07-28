@@ -8,7 +8,8 @@ import org.apache.spark.ml.feature.{
   PCA,
   PCAModel,
   VectorAssembler,
-  StandardScaler
+  StandardScaler,
+  Imputer
 }
 import org.apache.spark.ml.functions.vector_to_array
 import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
@@ -115,6 +116,25 @@ object Preprocessor {
     )
   }
 
+  /** Converts null values to the mean/median value of each column */
+  def nullToValues(
+      data: DataFrame,
+      method: String = "mean",
+      exclude: Array[String] = Array()
+  ): DataFrame = {
+    val cols = data.columns.filterNot(c => exclude.contains(c))
+    val mappedCols = cols.map(c => s"T${c}")
+    val imputer = new Imputer()
+      .setInputCols(cols)
+      .setOutputCols(mappedCols)
+      .setStrategy(method)
+    var fittedData = imputer.fit(data).transform(data)
+    (cols, mappedCols).zipped.foreach { (c, mc) =>
+      fittedData = fittedData.drop(c).withColumnRenamed(mc, c)
+    }
+    return fittedData
+  }
+
   /** Trims column names and DataFrame values */
   def trimValues(data: DataFrame): DataFrame = {
     val dataTypes: Map[String, String] = data.dtypes.toMap
@@ -174,7 +194,7 @@ object Preprocessor {
     val maxComp = Utils.clip(maxComponents, 1, numFeatures)
 
     // Standardize features to zero mean, unit variance
-    if (standardizeFeatures) data = standardize(data, pcaFeaturesCol)
+    if (standardizeFeatures) data = standardize(data, featuresCol)
 
     // Perform PCA
     val pca = new PCA()

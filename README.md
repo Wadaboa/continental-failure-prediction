@@ -1,12 +1,12 @@
 # Production Line Performance
 
-This repository contains the implementation of a solution to the `Bosch Production Line Performance Competition`, hosted on [Kaggle](https://www.kaggle.com/c/bosch-production-line-performance) in 2016. The solution is highly based on the analysis presented in [[1]](#1) and [[2]](#2) and has been implemented using the Scala/Spark combo.
+This repository contains the implementation of a solution to the [Bosch Production Line Performance Competition](https://www.kaggle.com/c/bosch-production-line-performance), hosted on Kaggle in 2016. The solution is highly based on the analysis presented in [[1]](#1) and [[2]](#2) and has been implemented using the Scala/Spark combo.
 
 ## Nested projects
 
 In order to test Spark's capabilities and to try ad-hoc functions, other datasets have been included in the project, even though they are not related at all to the main problem, i.e. the `Bosch Production Line Performance Competition`. The extra datasets are the following:
-- [Adult](https://archive.ics.uci.edu/ml/datasets/adult): Aims at separating people whose income is greater than 50 thousands dollars per year from the rest. This dataset was useful to test various classifiers (e.g. decision trees, random forests) and check if the custom evaluation functions (e.g. `Matthew's Correlation Coeffiecient (MCC)`) were correct.
-- [Arrest](https://www.kaggle.com/deepakg/usarrests): Contains statistics, in arrests per 100.000 residents, for assault, murder, and rape in each of the 50 US states in 1973. It also gives the percent of the population living in urban areas. This dataset was useful to test various clustering algorithms (mainly k-means) and check if the custom evaluation functions (`Inertia` and `Gap statistic`) were correct.
+- [Adult](https://archive.ics.uci.edu/ml/datasets/adult): Aims at separating people whose income is greater than 50 thousands dollars per year from the rest. This dataset was useful to test various classifiers (e.g. decision trees, random forests) and check if the custom evaluation functions (e.g. [Matthew's Correlation Coeffiecient](https://en.wikipedia.org/wiki/Matthews_correlation_coefficient)) were correct.
+- [Arrest](https://www.kaggle.com/deepakg/usarrests): Contains statistics, in arrests per 100.000 residents, for assault, murder, and rape in each of the 50 US states in 1973. It also gives the percent of the population living in urban areas. This dataset was useful to test various clustering algorithms (mainly k-means) and check if the custom evaluation functions (`Inertia` and `Gap` [[5]](#5)) were correct.
 
 ## Environment info
 
@@ -58,7 +58,7 @@ export AWS_SESSION_TOKEN
 
 _Note_: You can also use the `script/run-app.sh` script to run the application locally. To do so, you just have to launch `script/run-app.sh`, without passing any additional parameter.
 
-## Supported classifiers:
+## Supported classifiers
 
 The following is a list of supported classifiers (the highlighted name is the one that should be used with the `--classifier-name` main option):
 - [Decision Tree](https://spark.apache.org/docs/latest/ml-classification-regression.html#decision-trees): `DT`
@@ -95,3 +95,7 @@ The following is a description of files/folder which were not mentioned above:
   _Aayush Mudgal, Sheallika Singh, Vibhuti Mahajan (2014)_.\
   **Reducing Manufacturing Failures**.\
   Columbia University E6893 Big Data Analytics Fall 2014 Final Report.
+- <a id="5">[5]</a>
+  _Robert Tibshirani, Guenther Walther, Trevor Hastie (2002)_.\
+  **Estimating the number of clusters in a data set via the gap statistic**.\
+  Journal of the Royal Statistical Society, Statistical Methodology, Series B, Volume 63 Issue 2, Pages 411-423.
