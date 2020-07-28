@@ -35,6 +35,9 @@ object Preprocessor {
   ): DataFrame = {
     val Array(toReturn, toDrop) =
       data.randomSplit(Array(p, 1 - p), seed = Utils.seed)
+    Logger.info(
+      s"Retrieving a random subset of samples of dimension ${p * data.count}"
+    )
     return toReturn
   }
 
@@ -52,7 +55,7 @@ object Preprocessor {
         (c, data.agg(countNulls(col(c), nanAsNull = true)).first.getLong(0))
       )
     val toDrop = counts.filter(x => x._2 == numRows).map(_._1)
-    Logger.info(s"Dropping null columns ${toDrop.mkString(" ")}")
+    Logger.info(s"Dropping null columns: ${toDrop.mkString("[", ", ", "]")}")
     return dropColumns(data, toDrop: _*)
   }
 
@@ -61,7 +64,9 @@ object Preprocessor {
     val counts = data.columns
       .map(c => (c, data.agg(countDistinct(c)).first.getLong(0)))
     val toDrop = counts.filter(x => x._2 == 1).map(_._1)
-    Logger.info(s"Dropping constant columns ${toDrop.mkString(" ")}")
+    Logger.info(
+      s"Dropping constant columns: ${toDrop.mkString("[", ", ", "]")}"
+    )
     return dropColumns(data, toDrop: _*)
   }
 
@@ -139,7 +144,7 @@ object Preprocessor {
     )
   }
 
-  /** Perform Principal Component Analysis to reduce the number of features */
+  /** Performs Principal Component Analysis to reduce the number of features */
   def pca(
       inputData: DataFrame,
       maxComponents: Int,
@@ -152,7 +157,6 @@ object Preprocessor {
       explainedVariance > 0 && explainedVariance <= 1,
       "Invalid value for the explainedVariance parameter."
     )
-    require(maxComponents > 0, "Parameter maxComponents must be > 0.")
 
     // Assemble input features into a single vector
     val featuresCol = "features"
@@ -165,6 +169,10 @@ object Preprocessor {
         inputCols = Some(data.columns.filterNot(c => exclude.contains(c)))
       )
 
+    // Clip the maximum number of components
+    val numFeatures = data.select(featuresCol).first.getAs[Vector](0).size
+    val maxComp = Utils.clip(maxComponents, 1, numFeatures)
+
     // Standardize features to zero mean, unit variance
     if (standardizeFeatures) data = standardize(data, pcaFeaturesCol)
 
@@ -172,14 +180,14 @@ object Preprocessor {
     val pca = new PCA()
       .setInputCol(featuresCol)
       .setOutputCol(pcaFeaturesCol)
-      .setK(maxComponents)
+      .setK(maxComp)
     val fittedModel = pca.fit(data)
 
     // Get the components accounting for the given explained variance
     val variances =
       Utils.take(fittedModel.explainedVariance.toArray, explainedVariance)
     var numComponents = variances.length
-    if (numComponents == 0) numComponents = maxComponents
+    if (numComponents == 0) numComponents = maxComp
     Logger.info(
       s"The number of principal components explaining ${explainedVariance * 100}% of the variance is ${numComponents}"
     )
@@ -204,13 +212,15 @@ object Preprocessor {
       vectorCol: String,
       maintainVector: Boolean = false
   ): DataFrame = {
-    val otherCols = data.columns.filterNot(c => c == vectorCol)
     val size = data.select(vectorCol).first.getAs[Vector](0).size
-    var exprs = (0 until size).map(i => col("_tmp").getItem(i).alias(s"f$i"))
-    exprs :+ otherCols.map(c => col(c))
-    val newData = data.select(vector_to_array(col(vectorCol)).alias("_tmp"))
-    if (maintainVector) exprs = exprs :+ col("_tmp").alias(vectorCol)
-    return newData.select(exprs: _*)
+    var exprs =
+      (0 until size).map(i => col("_tmp_vec").getItem(i).alias(s"f$i"))
+    val newData = data
+      .select(vector_to_array(col(vectorCol)).alias("_tmp_vec"))
+      .select(exprs: _*)
+    val mergedData = Utils.mergeDataFrames(newData, data.select("*"))
+    if (!maintainVector) return mergedData.drop(vectorCol)
+    return mergedData
   }
 
   /** Transform features to principal components */

@@ -26,7 +26,6 @@ case class BoschDataset(
 
   override def preprocess(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.takeSubset(_: DataFrame, p = 0.6),
       Preprocessor
         .pca(
           _: DataFrame,

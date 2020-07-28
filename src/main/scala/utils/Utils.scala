@@ -5,7 +5,7 @@ import Numeric.Implicits._
 
 import org.apache.log4j.{Logger => L}
 import org.apache.spark.sql.{Row, DataFrame, SparkSession}
-import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.functions.{col, monotonically_increasing_id}
 import org.apache.spark.sql.types.{StructType, DoubleType, StructField}
 import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
 
@@ -66,6 +66,22 @@ object Utils {
   /** Converts a Tuple2[T, T] to Array[T] */
   def tuple2ToArray[T: ClassTag](t: Tuple2[T, T]): Array[T] = Array(t._1, t._2)
 
+  /** Keep a value within a specific range */
+  def clip(x: Int, min: Int, max: Int) = math.max(min, math.min(max, x))
+
+  /** Merges two DataFrames, even if they have different columns
+    * (though, they must have the same number of rows)
+    */
+  def mergeDataFrames(dataOne: DataFrame, dataTwo: DataFrame): DataFrame = {
+    require(
+      dataOne.count == dataTwo.count,
+      "The two DataFrames must have the same number of rows."
+    )
+    val df1 = dataOne.withColumn("_tmp_id", monotonically_increasing_id())
+    val df2 = dataTwo.withColumn("_tmp_id", monotonically_increasing_id())
+    return df1.join(df2, ("_tmp_id")).drop("_tmp_id")
+  }
+
   /** Generates a DataFrame with the specified number of rows and columns,
     * containing random double values
     */
@@ -89,7 +105,7 @@ object Utils {
   }
 
   /** Splits the given DataFrame based on a specific column.
-    * Returns a Map[Int, DataFrame], in which each table contains a different
+    * Returns a Map[Any, DataFrame], in which each table contains a different
     * value over the split column and that value is used as the map key.
     */
   def splitDataFrame(

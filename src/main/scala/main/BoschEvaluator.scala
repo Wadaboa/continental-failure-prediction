@@ -21,13 +21,6 @@ object BoschEvaluator {
     // Apply common preprocessing
     val preprocessed = dataset.preprocessCommon()
     preprocessed.show()
-    val usefulFeatures = preprocessed.getColumnNames()
-    val notUsefulFeatures = dataset
-      .getColumnNames()
-      .filterNot(c => usefulFeatures.contains(c))
-
-    usefulFeatures.foreach(println)
-    notUsefulFeatures.foreach(println)
 
     // Apply preprocessing for clustering
     val (toCluster, pc) = preprocessed.preprocessForClustering()
@@ -52,11 +45,10 @@ object BoschEvaluator {
     val classifiers: Map[Int, Predictor[_]] =
       splittedData.map({
         case (v, d) => {
-          var newData = dataset.data.drop(notUsefulFeatures: _*)
-          var toClassify = BoschDataset(inputData = Some(newData)).preprocess()
-          toClassify.data = toClassify.data.filter(
-            !col("Id").isin(Utils.colToArrayOfDouble(d, "Id"): _*)
+          var newData = preprocessed.data.filter(
+            col("Id").isin(Utils.colToArrayOfDouble(d, "Id"): _*)
           )
+          var toClassify = BoschDataset(inputData = Some(newData)).preprocess()
           (
             v.asInstanceOf[Int],
             Predictor(classifierName.orNull.toString, toClassify)

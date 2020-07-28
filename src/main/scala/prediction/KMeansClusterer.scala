@@ -53,7 +53,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
         s"Training with ${k} clusters - New gap score: ${gap}"
       )
       Logger.info(
-        s"Training with ${k} clusters - New gap standard deviation: ${gap}"
+        s"Training with ${k} clusters - New gap standard deviation: ${stdDev}"
       )
       if (previousGap > gap - stdDev) {
         Logger.info(
