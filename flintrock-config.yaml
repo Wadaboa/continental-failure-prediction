@@ -15,9 +15,9 @@ providers:
   ec2:
     key-name: my-key-pair
     identity-file: my-key-pair.pem
-    instance-type: m4.large
+    instance-type: t2.xlarge
     region: us-east-1
-    ami: ami-00b882ac5193044e4
+    ami: ami-0f84e2a3635d2fac9
     user: ec2-user
     instance-profile-name: ec2-s3
 

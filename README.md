@@ -75,6 +75,9 @@ The following is a description of files/folder which were not mentioned above:
 
 ## Notes
 * AWS Educate account credentials change after 3 hours (the given session expires). In order to get them again you have to log in to [AWS Educate](https://aws.amazon.com/it/education/awseducate/), click on `AWS Account` and on the orange button labeled as `AWS Educate Starter Account`, which will take you to [Vocareum](https://labs.vocareum.com). On `Vocareum`, you can either go the [AWS Console](https://console.aws.amazon.com/) or copy/paste the session keys (`Account Details` section) into `~/.aws/credentials` (to use [awscli](https://aws.amazon.com/it/cli/)), or in `aws-credentials.env` (for this project).
+* AWS Educate account supports only the following EC2 instance types: `t2.small`, `t2.micro`, `t2.nano`, `m4.large`, `c4.large`, `c5.large`, `m5.large`, `t2.medium`, `m4.xlarge`, `t2.nano`, `c4.xlarge`, `c5.xlarge`, `t2.2xlarge`, `m5.2xlarge`, `t2.large`, `t2.xlarge`, `m5.xlarge`.
+* AWS Educate account supports only services in `us-east-1` region.
+* AWS Educate account highly limits IAM management.
 * Run `sbt console` to package the application and try it in the Scala REPL.
 
 ## References
