@@ -170,7 +170,7 @@ Numbers={OldStyle}]{Fira Sans Light}
 \begin{frame}
   \frametitle{Actual dataset}
   \begin{itemize}[<+->]
-    \item \textbf{Bosch}: Aims at predicting internal failures using thousands of measurements and tests made for each component along assembly lines.
+    \item \textbf{Bosch}: Aims at predicting internal failures using thousands of measurements and tests made for each component along different assembly lines.
   \end{itemize}
 \end{frame}
 
@@ -214,12 +214,11 @@ Numbers={OldStyle}]{Fira Sans Light}
 \begin{frame}
   \frametitle{k-means}
     The chosen clustering algorithm is k-means, since density-based methods (like DBSCAN) are still not available in Spark. So, the following issues needed to be addressed:
-
-    \begin{itemize}
+    \begin{itemize}[<+->]
       \item \textbf{Problem}: Automatically select the right amount of clusters:
       \begin{itemize}
         \item Silhouette and elbow methods are not ideal, since they require human analysis.
-        \item Spark 3.0.0 dropped support for inertia computation, maintaining only evaluation by silhouette scores.
+        \item<.-> Spark 3.0.0 dropped support for inertia computation, maintaining only evaluation by silhouette scores.
       \end{itemize} 
       \item \textbf{Solution}: Ad-hoc implementation of the Gap statistic method, described in \cite{gap}.
     \end{itemize}
@@ -227,7 +226,7 @@ Numbers={OldStyle}]{Fira Sans Light}
 
 \begin{frame}
   \frametitle{Gap statistic}
-    \begin{itemize}
+    \begin{itemize}[<+->]
       \item For $k = 1, .., K$, where $K$ is the maximum number of clusters, perform k-means and compute the resulting inertia $I_{k}$.
       \item Generate $B$ reference datasets by sampling from a uniform distribution over each feature, where the support is directly identified by features ranges. Then, for $k = 1, .., K$ and $b = 1, .., B$, perform k-means and compute the resulting inertia $I_{kb}$. Finally, estimate $E^{*}[log(I_{kb})]$ as $\frac{1}{B} \sum_{b}log(I_{kb})$.
       \item Compute the Gap score as $Gap(k) = E^{*}[log(I_{kb})] - log(I_{k})$.
@@ -239,13 +238,49 @@ Numbers={OldStyle}]{Fira Sans Light}
 % Classification section
 \section{Classification}
 \begin{frame}
-  
+  \frametitle{Classifiers}
+    \begin{itemize}
+      \item Decision Tree, \textbf{Random Forest}, Gradient Boosted Tree models.
+      \item Hyper-parameters selected by cross-validation on a parameter grid.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Evaluation}
+  Different evaluation strategies, based on a custom confusion matrix computation:
+    \begin{itemize}
+      \item \textbf{Accuracy}: $\frac{TP + TN}{TP + FP + FN + TN}$ (not well-suited to the Bosch dataset, given its high class imbalance).
+      \item \textbf{$F_{1}$-score}: $2\times\frac{prec \times rec}{prec + rec}$, where $prec = \frac{TP}{TP + FP}$ and $rec = \frac{TP}{TP + FN}$.
+      \item \textbf{Matthew's Correlation Coefficient (MCC)}: $\frac{TP \times TN - FP \times FN}{\sqrt{(TP + FP) \times (TP + FN) \times (TN + FP) \times (TN + FN)}}$. 
+      \item \textbf{Area under ROC}: The two-dimensional area underneath the entire ROC curve ($sens$/$rec$ at varying thresholds) from $(0,0)$ to $(1,1)$, where $sens = \frac{FP}{FP + TN}$.
+    \end{itemize}
 \end{frame}
 
 % Cloud section
-\section{Cloud}
+\section{Execution}
 \begin{frame}
+  \frametitle{Cloud}
+  \begin{itemize}
+    \item Spark 3.0.0 is not yet available on AWS EMR service (the last version that can be used is 2.4.4).
+    \item Spark 3.0.0 could be manually installed to EC2 clusters, but the Flintrock service already provides some shortcuts to create the desidered clusters and automatically install the selected Spark/Hadoop version.
+    \item Unfortunately, Flintrock was not tested with Spark 3.0.0, which in some installations relies on Java 11 (as opposed to Spark 2.4.4 which simply uses Java 8).
+    \item \textbf{Cloud machine}: 
+    \begin{itemize}
+      \item \textbf{Type}: \texttt{t2.xlarge}
+      \item \textbf{CPU}: 4 vCPUs based on Intel Xeon with Intel AVX, Intel Turbo
+      \item \textbf{RAM}: 16 GB
+    \end{itemize}
+  \end{itemize}
+\end{frame}
 
+\begin{frame}
+  \frametitle{Local}
+  \textbf{Local machine}:
+  \begin{itemize}
+    \item \textbf{Type}: Macbook Pro 16-inch 2019
+    \item \textbf{CPU}: 2.3 Ghz 8-Core Intel Core i9
+    \item \textbf{RAM}: 16 GB 2667 MHz DDR4
+  \end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
