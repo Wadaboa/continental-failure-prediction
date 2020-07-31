@@ -7,6 +7,7 @@
 \usepackage[english]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{appendixnumberbeamer}
+\usepackage{siunitx}
 
 \usepackage{minted}
 \setminted{linenos, numberblanklines=false, mathescape, texcomments, autogobble, breakanywhere, breakautoindent, breaklines, frame=lines, framesep=5\fboxsep}
@@ -18,8 +19,8 @@
 Numbers={OldStyle}]{Fira Sans Light}
 \setmathsfont(Digits)[Numbers={Lining, Proportional}]{Fira Sans Light}
 
-\def\mytitle{Title}
-\def\mysubtitle{Subtitle}
+\def\mytitle{Production Line Performance}
+\def\mysubtitle{Project work in Languages and Algorithms for Artificial Intelligence class (Module 2)}
 \def\myshortfullname{A. Falai}
 \def\myfullname{Alessio Falai}
 \def\myemail{alessio.falai@studio.unibo.it}
@@ -77,6 +78,15 @@ Numbers={OldStyle}]{Fira Sans Light}
     \beamer@ifempty{#2}{\beamer@atbeginsections}{\beamer@atbeginsection}%
   \fi%
   \beamer@resumemode}%
+\makeatother
+
+% Change shape size for itemize
+\setbeamertemplate{itemize item}[circle]
+\setbeamertemplate{itemize subitem}[square]
+
+% Conversion to roman numbers
+\makeatletter
+\newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@}
 \makeatother
 
 
@@ -146,28 +156,96 @@ Numbers={OldStyle}]{Fira Sans Light}
 \makeatletter
 \setbeamertemplate{navigation symbols}{}
 
-\section{Math stuff}
+% Datasets section
+\section{Datasets}
 \begin{frame}
-	\frametitle{Fermat's last theorem}
-	\begin{theorem}
-		The equation
-		$$
-		x^n+y^n=z^n
-		$$
-		has no integer solutions for $n > 2$ where $x, y, z \neq 0$.
-	\end{theorem}
-	\pause
-	\begin{proof}
-		The proof is trivial and left as an exercise for the reader.
-	\end{proof}
+  \frametitle{Test datasets}
+  \begin{itemize}[<+->]
+    \item \textbf{Arrest}: Contains statistics, in arrests per 100.000 residents, for assault, murder, and rape in each of the 50 US states in 1973. 
+          It also gives the percent of the population living in urban areas.
+    \item \textbf{Adult}: Aims at separating people whose income is greater than 50 thousands dollars per year from the rest.
+  \end{itemize}	
 \end{frame}
 
-\section{Code stuff}
-\begin{frame}[fragile]{Python code}
-	\begin{minted}[label=Hello world]{python}
-		def hello_world():
-			print("Hello world")
-	\end{minted}
+\begin{frame}
+  \frametitle{Actual dataset}
+  \begin{itemize}[<+->]
+    \item \textbf{Bosch}: Aims at predicting internal failures using thousands of measurements and tests made for each component along assembly lines.
+  \end{itemize}
+\end{frame}
+
+% Preprocessing section
+\section{Preprocessing}
+\begin{frame}
+  \frametitle{Data exploration}
+  \begin{itemize}[<+->]
+    \item The Bosch dataset includes 3 subsets: numerical, categorical and time data.
+    \item As stated in \cite{predict-failures}, the categorical data is extremely sparse, and thus not exploited in subsequent stages.
+    \item Our first analysis will be focused on just numerical data:
+    \begin{itemize} 
+      \item $968$ anonymized features
+      \item<.-> \num{1183747} labeled examples
+      \item<.-> $0.58\%$ of failed products
+      \item<.-> $78.5\%$ of missing values
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Two-stage approach}
+  \begin{itemize}[<+->]
+    \item \textbf{Stage \rom{1}}: This step clusters data with similar processes together into process groups.
+    \item \textbf{Stage \rom{2}}: This step uses supervised learning to predict the failed products. Each cluster is treated as an independent dataset and has its own classifier.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Data preprocessing}
+  \begin{itemize}[<+->]
+    \item \textbf{Common}: Columns containing null values and constant values in each row are dropped.
+    \item \textbf{Clustering}: Values get binarized (0 meaning null value and 1 meaning not null value) and PCA is applied to binarized features.
+    \item \textbf{Classification}: A feature imputation method (mean value over the column), followed by feature standardization (zero mean, unit variance) and PCA, is applied over non-binary values in each cluster.
+    \item \textbf{Prediction}: A new example follows the same preprocessing scheme as the whole dataset.
+  \end{itemize}
+\end{frame}
+
+% Clustering section
+\section{Clustering}
+\begin{frame}
+  \frametitle{k-means}
+    The chosen clustering algorithm is k-means, since density-based methods (like DBSCAN) are still not available in Spark. So, the following issues needed to be addressed:
+
+    \begin{itemize}
+      \item \textbf{Problem}: Automatically select the right amount of clusters:
+      \begin{itemize}
+        \item Silhouette and elbow methods are not ideal, since they require human analysis.
+        \item Spark 3.0.0 dropped support for inertia computation, maintaining only evaluation by silhouette scores.
+      \end{itemize} 
+      \item \textbf{Solution}: Ad-hoc implementation of the Gap statistic method, described in \cite{gap}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Gap statistic}
+    \begin{itemize}
+      \item For $k = 1, .., K$, where $K$ is the maximum number of clusters, perform k-means and compute the resulting inertia $I_{k}$.
+      \item Generate $B$ reference datasets by sampling from a uniform distribution over each feature, where the support is directly identified by features ranges. Then, for $k = 1, .., K$ and $b = 1, .., B$, perform k-means and compute the resulting inertia $I_{kb}$. Finally, estimate $E^{*}[log(I_{kb})]$ as $\frac{1}{B} \sum_{b}log(I_{kb})$.
+      \item Compute the Gap score as $Gap(k) = E^{*}[log(I_{kb})] - log(I_{k})$.
+      \item Compute the standard deviation $sd_{k}$ of $log(I_{kb})$ and define $s_{k} = sd_{k} * \sqrt{1 + \frac{1}{B}}$.
+      \item Select the minimum $k$ s.t. $Gap(k) - Gap(k + 1) + s_{k + 1} \geq 0$.
+    \end{itemize}
+\end{frame}
+
+% Classification section
+\section{Classification}
+\begin{frame}
+  
+\end{frame}
+
+% Cloud section
+\section{Cloud}
+\begin{frame}
+
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

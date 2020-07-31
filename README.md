@@ -44,7 +44,7 @@ Here, `<SomeEvaluator>` is the main you want to run (check the `src/main/scala/m
 **This project makes use of the [Flintrock](https://github.com/nchammas/flintrock) package to manage EC2 clusters and install HDFS/Spark on them, instead of the simpler AWS EMR service, since EMR is not yet compatible with `Spark 3.0.0`, at the time of writing (July 2020).**
 
 In order to run the Scala/Spark application remotely, on an AWS EC2 cluster, you need to do the following:
-1. Make sure that you have generated an EC2 key pair (AWS Console -> EC2 -> Key pairs -> Create a key pair -> Name it `my-key-pair`) and saved the `.pem` file in the root of the project, as `my-key-pair.pem`.
+1. Make sure that you have generated an EC2 key pair (AWS Console → EC2 → Key pairs → Create a key pair → Name it `my-key-pair`) and saved the `.pem` file in the root of the project, as `my-key-pair.pem`.
 2. Make sure that your AWS credentials are correctly set inside the `aws-credentials.env` file in the root of the project (see the `Notes` section for more info). Below you can see a template for the `aws-credentials.env` file:
 ```bash
 export AWS_ACCESS_KEY_ID
