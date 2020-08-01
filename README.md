@@ -69,6 +69,7 @@ The following is a list of supported classifiers (the highlighted name is the on
 
 The following is a description of files/folder which were not mentioned above:
 - `bin/`: It contains JARs which are needed to access S3 services on an EC2 cluster.
+- `slides/`: It contains the project's presentation [slides](slides/slides.pdf).
 - `.java-version`: It contains the Java version to be used by [jenv](https://github.com/jenv/jenv), which is a Java environment manager.
 - `.scalafmt.conf`: It contains the version of the [Scalafmt](https://scalameta.org/scalafmt/) Scala code formatter.
 - `.flintrock-config.yaml`: It contains Flintrock's configurations, used in the creation of a new EC2 cluster.

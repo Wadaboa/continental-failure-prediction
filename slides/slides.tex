@@ -40,6 +40,12 @@ Numbers={OldStyle}]{Fira Sans Light}
 \usecolortheme{metropolis}
 \setbeamercovered{dynamic}
 
+% Edit progressbar width
+\makeatletter
+\setlength{\metropolis@progressinheadfoot@linewidth}{1.5pt}
+\setlength{\metropolis@progressonsectionpage@linewidth}{1.5pt}
+\makeatother
+
 % Show 'page' before page numbers in toc
 \addtocontents{toc}{~\hfill page\par}
 
@@ -89,7 +95,6 @@ Numbers={OldStyle}]{Fira Sans Light}
 \newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@}
 \makeatother
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Document %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
@@ -126,10 +131,12 @@ Numbers={OldStyle}]{Fira Sans Light}
 	\maketitle
 \end{frame}
 
-\begin{frame}
-	\frametitle{Table of contents}
-	\setbeamertemplate{section in toc}[ball]
-	\tableofcontents[hideallsubsections]
+\begin{frame}[allowframebreaks]
+  \frametitle{Table of contents}
+  \setbeamertemplate{section in toc}[ball]
+  \tableofcontents[sections={1,5,6}, hideallsubsections]
+    \framebreak
+  \tableofcontents[sections={2,3,4}, hideallsubsections]
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -298,6 +305,9 @@ Numbers={OldStyle}]{Fira Sans Light}
     \end{itemize}
   \end{itemize}
 \end{frame}
+
+% Results section
+\section{Results}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Appendix %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

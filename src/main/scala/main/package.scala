@@ -1,6 +1,10 @@
 import org.apache.log4j.{Logger, Level}
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 import java.nio.file.{Paths, Files}
+import java.net.URI
+
+import utils._
 
 package object main {
 
@@ -46,6 +50,10 @@ package object main {
 
   /** Checks if a file exists in the given path */
   def fileExists(path: String): Boolean = {
+    if (path.startsWith("s3"))
+      return FileSystem
+        .get(new URI(path), Spark.session.sparkContext.hadoopConfiguration)
+        .exists(new Path(path))
     return Files.exists(Paths.get(path))
   }
 

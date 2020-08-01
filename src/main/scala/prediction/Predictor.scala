@@ -141,6 +141,7 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
 
   /** Saves the trained model to disk */
   def save(path: String): Unit = {
+    Logger.info(s"Saving model to ${path}")
     trainedModel match {
       case c: CrossValidatorModel =>
         trainedModel
@@ -155,6 +156,7 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
 
   /** Loads the trained model from disk */
   def load(path: String): Unit = {
+    Logger.info(s"Loading model from ${path}")
     trainedModel = PipelineModel.load(path).asInstanceOf[Transformer]
   }
 

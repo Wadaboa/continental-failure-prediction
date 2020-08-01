@@ -13,6 +13,7 @@ object BoschEvaluator {
     val options = parseArgs(args)
     val inputPath = options.get("inputPath")
     val classifierName = options.get("classifierName")
+    val modelFolder = options.get("modelFolder")
 
     // Create Dataset object (and read data)
     val dataset = BoschDataset(inputPath = inputPath)
@@ -28,17 +29,23 @@ object BoschEvaluator {
 
     // Cluster data and print statistics
     val kmeans = Clusterer("KM", toCluster)
-    kmeans.maxClusters = 10
-    kmeans.train()
+    val clustererModelFile = s"${modelFolder.orNull.toString}/bosch-kmeans.ml"
+    if (fileExists(clustererModelFile)) kmeans.load(clustererModelFile)
+    else {
+      kmeans.maxClusters = 10
+      kmeans.train()
+    }
     val predictions = kmeans.predict(toCluster.data)
     predictions.show()
     val clusterCenters = kmeans.trainedModel.clusterCenters
-    val numClusters = clusterCenters.length
     val inertia = kmeans.evaluate(predictions, metricName = "inertia")
     val silhouette = kmeans.evaluate(predictions, metricName = "silhouette")
     Logger.info(s"Cluster centers: ${clusterCenters.mkString(" ")}")
     Logger.info(s"Inertia score: ${inertia(0)}")
     Logger.info(s"Silhouette score: ${silhouette(0)}")
+
+    // Save the clusterer model
+    if (!fileExists(clustererModelFile)) kmeans.save(clustererModelFile)
 
     // Define classifiers based on the clustering output
     val splittedData = Utils.splitDataFrame(predictions, kmeans.predictionCol)
@@ -61,7 +68,10 @@ object BoschEvaluator {
     // Train each classifier and print results
     classifiers.foreach({
       case (v, c) => {
-        c.train(assemble = false)
+        var classifierModelFile =
+          s"${modelFolder.orNull.toString}/bosch-${classifierName.orNull.toString}-${v}.ml"
+        if (fileExists(classifierModelFile)) c.load(classifierModelFile)
+        else c.train(assemble = false)
         var predictions = c.test()
         predictions.show()
         var accuracy = c.evaluate(predictions, metricName = "accuracy")
@@ -72,6 +82,9 @@ object BoschEvaluator {
         Logger.info(s"F1 score for cluster #${v}: ${fscore}")
         Logger.info(s"MCC score for cluster #${v}: ${mcc}")
         Logger.info(s"Area under ROC score for cluster #${v}: ${auroc}")
+
+        // Save the classifiers models
+        if (!fileExists(classifierModelFile)) c.save(classifierModelFile)
       }
     })
 
