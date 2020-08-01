@@ -14,7 +14,6 @@ import org.apache.spark.ml.feature.{
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.tuning.{CrossValidator, CrossValidatorModel}
 import org.apache.spark.ml.evaluation.Evaluator
-import java.security.InvalidParameterException
 
 object Predictor {
 

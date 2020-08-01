@@ -181,7 +181,7 @@ Numbers={OldStyle}]{Fira Sans Light}
   \begin{itemize}[<+->]
     \item The Bosch dataset includes 3 subsets: numerical, categorical and time data.
     \item As stated in \cite{predict-failures}, the categorical data is extremely sparse, and thus not exploited in subsequent stages.
-    \item Our first analysis will be focused on just numerical data:
+    \item Our first analysis will be focused on just \textbf{numerical data}:
     \begin{itemize} 
       \item $968$ anonymized features
       \item<.-> \num{1183747} labeled examples
@@ -203,9 +203,19 @@ Numbers={OldStyle}]{Fira Sans Light}
   \frametitle{Data preprocessing}
   \begin{itemize}[<+->]
     \item \textbf{Common}: Columns containing null values and constant values in each row are dropped.
-    \item \textbf{Clustering}: Values get binarized (0 meaning null value and 1 meaning not null value) and PCA is applied to binarized features.
-    \item \textbf{Classification}: A feature imputation method (mean value over the column), followed by feature standardization (zero mean, unit variance) and PCA, is applied over non-binary values in each cluster.
+    \item \textbf{Clustering}: Values are binarized (0 meaning null value and 1 meaning not null value) and \textit{PCA} is applied to binarized features.
+    \item \textbf{Classification}: A \textit{feature imputation} method (mean value over the column), followed by \textit{feature standardization} (zero mean, unit variance) and \textit{PCA}, is applied over non-binary values in each cluster.
     \item \textbf{Prediction}: A new example follows the same preprocessing scheme as the whole dataset.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{PCA}
+  Custom implementation of the \textit{PCA} workflow, taking into account:
+  \begin{itemize}[<+->]
+    \item \textit{Features assembly} and \textit{features standardization}.
+    \item Selection of the minimum number of principal components \textit{explaining} the given percentage of \textit{variance} in the data (defaults to $95\%$).
+    \item \textit{Transformation matrix} storage, so that new examples can be easily converted into principal components.
   \end{itemize}
 \end{frame}
 
@@ -213,14 +223,14 @@ Numbers={OldStyle}]{Fira Sans Light}
 \section{Clustering}
 \begin{frame}
   \frametitle{k-means}
-    The chosen clustering algorithm is k-means, since density-based methods (like DBSCAN) are still not available in Spark. So, the following issues needed to be addressed:
+    The chosen clustering algorithm is \texttt{k-means}, since density-based methods (like \texttt{DBSCAN}) are still not available in Spark. So, the following issues needed to be addressed:
     \begin{itemize}[<+->]
       \item \textbf{Problem}: Automatically select the right amount of clusters:
       \begin{itemize}
-        \item Silhouette and elbow methods are not ideal, since they require human analysis.
-        \item<.-> Spark 3.0.0 dropped support for inertia computation, maintaining only evaluation by silhouette scores.
+        \item \textit{Silhouette} and \textit{elbow} methods are not ideal, since they require human analysis.
+        \item<.-> Spark 3.0.0 dropped support for \textit{inertia} computation, maintaining only evaluation by silhouette scores.
       \end{itemize} 
-      \item \textbf{Solution}: Ad-hoc implementation of the Gap statistic method, described in \cite{gap}.
+      \item \textbf{Solution}: Ad-hoc implementation of the \textit{Gap statistic} method, described in \cite{gap}.
     \end{itemize}
 \end{frame}
 
@@ -237,49 +247,55 @@ Numbers={OldStyle}]{Fira Sans Light}
 
 % Classification section
 \section{Classification}
-\begin{frame}
+\begin{frame}[<+->]
   \frametitle{Classifiers}
     \begin{itemize}
-      \item Decision Tree, \textbf{Random Forest}, Gradient Boosted Tree models.
-      \item Hyper-parameters selected by cross-validation on a parameter grid.
+      \item \textbf{Implemented models}: Decision Tree, \textbf{Random Forest} and Gradient Boosted Tree.
+      \item \textbf{Training strategy}: Hyper-parameters selected by cross-validation on a parameter grid, mainly consisting of the following:
+      \begin{itemize}
+        \item Maximum \textit{depth} of each tree, ranging from 1 to 30 with step 5.
+        \item<.-> Minimum \textit{number of instances} each child must have after split, ranging from 1 to 10 with step 2. 
+      \end{itemize}
     \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Evaluation}
-  Different evaluation strategies, based on a custom confusion matrix computation:
-    \begin{itemize}
+  Different evaluation strategies, based on a custom \textit{confusion matrix} computation:
+    \begin{itemize}[<+->]
       \item \textbf{Accuracy}: $\frac{TP + TN}{TP + FP + FN + TN}$ (not well-suited to the Bosch dataset, given its high class imbalance).
-      \item \textbf{$F_{1}$-score}: $2\times\frac{prec \times rec}{prec + rec}$, where $prec = \frac{TP}{TP + FP}$ and $rec = \frac{TP}{TP + FN}$.
+      \item \textbf{$F_{1}$-score}: $2\times\frac{PPV \times TPR}{PPV + TPR}$, where $PPV = \frac{TP}{TP + FP}$ and $TPR = \frac{TP}{TP + FN}$.
+      \item \textbf{Area under ROC}: The two-dimensional area underneath the entire ROC curve ($TPR$/$FPR$ at varying thresholds) from $(0,0)$ to $(1,1)$, where $FPR = \frac{FP}{FP + TN}$.
       \item \textbf{Matthew's Correlation Coefficient (MCC)}: $\frac{TP \times TN - FP \times FN}{\sqrt{(TP + FP) \times (TP + FN) \times (TN + FP) \times (TN + FN)}}$. 
-      \item \textbf{Area under ROC}: The two-dimensional area underneath the entire ROC curve ($sens$/$rec$ at varying thresholds) from $(0,0)$ to $(1,1)$, where $sens = \frac{FP}{FP + TN}$.
     \end{itemize}
 \end{frame}
 
 % Cloud section
 \section{Execution}
 \begin{frame}
-  \frametitle{Cloud}
-  \begin{itemize}
-    \item Spark 3.0.0 is not yet available on AWS EMR service (the last version that can be used is 2.4.4).
-    \item Spark 3.0.0 could be manually installed to EC2 clusters, but the Flintrock service already provides some shortcuts to create the desidered clusters and automatically install the selected Spark/Hadoop version.
-    \item Unfortunately, Flintrock was not tested with Spark 3.0.0, which in some installations relies on Java 11 (as opposed to Spark 2.4.4 which simply uses Java 8).
-    \item \textbf{Cloud machine}: 
-    \begin{itemize}
-      \item \textbf{Type}: \texttt{t2.xlarge}
-      \item \textbf{CPU}: 4 vCPUs based on Intel Xeon with Intel AVX, Intel Turbo
-      \item \textbf{RAM}: 16 GB
-    \end{itemize}
+  \frametitle{Cloud issues}
+  \begin{itemize}[<+->]
+    \item \texttt{Spark 3.0.0} is not yet available on the AWS \texttt{EMR} service (the last version that can be used is \texttt{2.4.4}).
+    \item Spark 3.0.0 could be manually installed to \texttt{EC2} clusters, but the \texttt{Flintrock} service already provides some shortcuts to create the desidered clusters and automatically install the selected Spark/Hadoop version.
+    \item Unfortunately, Flintrock was not tested with Spark 3.0.0, which in some installations relies on \texttt{Java 11} (as opposed to Spark 2.4.4 which simply uses \texttt{Java 8}).
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{Local}
-  \textbf{Local machine}:
-  \begin{itemize}
-    \item \textbf{Type}: Macbook Pro 16-inch 2019
-    \item \textbf{CPU}: 2.3 Ghz 8-Core Intel Core i9
-    \item \textbf{RAM}: 16 GB 2667 MHz DDR4
+  \frametitle{Machines}
+  \begin{itemize}[<+->]
+    \item \textbf{Local}:
+    \begin{itemize}
+      \item<.-> \textbf{Type}: Macbook Pro 16-inch 2019
+      \item<.-> \textbf{CPU}: 2.3 Ghz 8-Core Intel Core i9
+      \item<.-> \textbf{RAM}: 16 GB 2667 MHz DDR4
+    \end{itemize}
+    \item \textbf{Cloud}: 
+      \begin{itemize}
+        \item<.-> \textbf{Type}: \texttt{t2.xlarge}
+        \item<.-> \textbf{CPU}: 4 vCPUs based on Intel Xeon with Intel AVX, Intel Turbo
+        \item<.-> \textbf{RAM}: 16 GB
+    \end{itemize}
   \end{itemize}
 \end{frame}
 
@@ -300,9 +316,4 @@ Numbers={OldStyle}]{Fira Sans Light}
     \bibliographystyle{plain}
 \end{frame}
 
-\begin{frame}
-	\frametitle{Backup frame}
-	\usebeamercolor[fg]{normal text}
-	This is a backup frame, useful to include additional material for questions from the audience.
-\end{frame}
 \end{document}

@@ -15,9 +15,9 @@ import org.apache.spark.ml.classification.{GBTClassifier => GBT}
 case class GradientBoostedClassifier(dataset: Dataset)
     extends Predictor[GBT](dataset) {
 
-  var maxDepth: Int = 10
+  var maxDepth: Int = 30
   var maxBins: Int = 64
-  var minSamplesLeaf: Int = 3
+  var minSamplesLeaf: Int = 10
 
   var model = new GBT()
     .setMaxDepth(maxDepth)
@@ -30,7 +30,7 @@ case class GradientBoostedClassifier(dataset: Dataset)
 
   override def paramGrid: Array[ParamMap] = {
     return new ParamGridBuilder()
-      .addGrid(model.maxDepth, (1 to maxDepth).toArray)
+      .addGrid(model.maxDepth, (1 to maxDepth by 5).toArray)
       .addGrid(
         model.maxBins,
         (dataset.maxDistinctValues to maxBins by 10).toArray

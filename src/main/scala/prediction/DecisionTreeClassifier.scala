@@ -16,9 +16,9 @@ case class DecisionTreeClassifier(dataset: Dataset)
     extends Predictor[DT](dataset) {
 
   var impurity: String = "entropy"
-  var maxDepth: Int = 10
+  var maxDepth: Int = 30
   var maxBins: Int = 64
-  var minSamplesLeaf: Int = 3
+  var minSamplesLeaf: Int = 10
 
   var model = new DT()
     .setImpurity(impurity)
@@ -32,7 +32,7 @@ case class DecisionTreeClassifier(dataset: Dataset)
 
   override def paramGrid: Array[ParamMap] = {
     return new ParamGridBuilder()
-      .addGrid(model.maxDepth, (1 to maxDepth by 3).toArray)
+      .addGrid(model.maxDepth, (1 to maxDepth by 5).toArray)
       .addGrid(
         model.maxBins,
         (dataset.maxDistinctValues to maxBins by 10).toArray
