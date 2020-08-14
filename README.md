@@ -34,10 +34,11 @@ spark-submit \
 	--class "main.<SomeEvaluator>" \
 	"target/scala-2.12/production-line-performance_2.12-1.0.jar"\
 	--input-path "<dataset-path>" \
+  --model-folder "<model-folder>" \
 	--classifier-name "<classifier-name>"
 ```
 
-Here, `<SomeEvaluator>` is the main you want to run (check the `src/main/scala/main/` package for selection); `<dataset-path>` is the path to the dataset you want to use (check the `datasets/` folder for selection); and `<classifier-name>` is the name of the classifier you want to exploit (check the section below for selection).
+Here, `<SomeEvaluator>` is the main you want to run (check the `src/main/scala/main/` package for selection), `<dataset-path>` is the path to the dataset you want to use (check the `datasets/` folder for selection), `<model-folder>` is the path to a folder where to read/write ML models for the dataset in use (check the `models/` folder for selection) and `<classifier-name>` is the name of the classifier you want to exploit (check the section below for selection).
 
 ### Remote
 
@@ -56,7 +57,7 @@ export AWS_SESSION_TOKEN
 5. Make sure that you have created an S3 bucket, named `production-line-performance`, containing the `datasets/` folder present in the root of the project.
 6. Run the script `script/run-app.sh remote` and check the execution at `<ec2-master>:8080`, where `<ec2-master>` is the DNS name of the EC2's cluster master node (you can check it using the command `flintrock describe`, field `master`).
 
-_Note_: You can also use the `script/run-app.sh` script to run the application locally. To do so, you just have to launch `script/run-app.sh`, without passing any additional parameter.
+_Note_: You can also use the `script/run-app.sh` script to run the application locally. To do so, you just have to launch `script/run-app.sh`, without passing any additional parameter, or execute `script/run-app.sh local`.
 
 ## Supported classifiers
 
@@ -76,7 +77,7 @@ The following is a description of files/folder which were not mentioned above:
 
 ## Notes
 * AWS Educate account credentials change after 3 hours (the given session expires). In order to get them again you have to log in to [AWS Educate](https://aws.amazon.com/it/education/awseducate/), click on `AWS Account` and on the orange button labeled as `AWS Educate Starter Account`, which will take you to [Vocareum](https://labs.vocareum.com). On `Vocareum`, you can either go the [AWS Console](https://console.aws.amazon.com/) or copy/paste the session keys (`Account Details` section) into `~/.aws/credentials` (to use [awscli](https://aws.amazon.com/it/cli/)), or in `aws-credentials.env` (for this project).
-* AWS Educate account supports only the following EC2 instance types: `t2.small`, `t2.micro`, `t2.nano`, `m4.large`, `c4.large`, `c5.large`, `m5.large`, `t2.medium`, `m4.xlarge`, `t2.nano`, `c4.xlarge`, `c5.xlarge`, `t2.2xlarge`, `m5.2xlarge`, `t2.large`, `t2.xlarge`, `m5.xlarge`.
+* AWS Educate account supports only the following EC2 instance types: `m4.large`, `m4.xlarge`, `m5.large`, `m5.xlarge`, `m5.2xlarge`, `c4.large`, `c4.xlarge`, `c5.large`, `c5.xlarge`, `t2.nano`, `t2.micro`, `t2.small`, `t2.medium`, `t2.large`, `t2.xlarge`, `t2.2xlarge`.
 * AWS Educate account supports only services in `us-east-1` region.
 * AWS Educate account highly limits IAM management.
 * Run `sbt console` to package the application and try it in the Scala REPL.
