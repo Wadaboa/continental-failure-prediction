@@ -21,11 +21,12 @@ if [ -z "$DEPLOY_MODE" ]; then
 fi
 
 if [ $DEPLOY_MODE == "remote" ] && [ -z "$REMOTE_TYPE" ]; then
-	REMOTE_TYPE="flintrock"
+	REMOTE_TYPE="ssh"
 fi
 
 # Set useful variables
 _PATH=$(dirname "$(realpath $0)")
+EC2_NAME=$(flintrock describe | grep -oP '(?<=master: )[^ ]*')
 EC2_CLUSTER=$(flintrock describe --master-hostname-only | grep -oP '(?<=INFO  - )[^ ]*' | sed 's/.$//')
 EC2_USER="ec2-user"
 EC2_HOME="/home/$EC2_USER"
@@ -41,42 +42,48 @@ MODEL="models/bosch/"
 CLASSIFIER_NAME="--classifier-name RF"
 
 # Compile and package app in a JAR file
+echo "Compiling project..."
 sbt clean package
+echo ""
 
 # Parse deploy mode
 if [[ $DEPLOY_MODE == "remote" ]]; then
 	# Define submit remote parameters
+	MASTER="--master spark://${EC2_NAME}:7077"
 	INPUT_PATH="--input-path $S3_BUCKET_LINK/$DATASET"
 	MODEL_FOLDER="--model-folder $S3_BUCKET_LINK/$MODEL"
-	PARAMS="$MAIN_CLASS $EC2_HOME/$MAIN_JAR_NAME $INPUT_PATH $MODEL_FOLDER $CLASSIFIER_NAME"
+	PARAMS="$MASTER $MAIN_CLASS $EC2_HOME/$MAIN_JAR_NAME $INPUT_PATH $MODEL_FOLDER $CLASSIFIER_NAME"
 
 	# Load AWS credentials
 	source $_PATH/../aws-credentials.env
 
 	# Copy the JAR file to the running cluster using Flintrock
-	flintrock copy-file $EC2_CLUSTER $MAIN_JAR_LOCAL_PATH $EC2_HOME
+	echo "Copying $MAIN_JAR_NAME to cluster..."
+	flintrock copy-file $EC2_CLUSTER $MAIN_JAR_LOCAL_PATH "$EC2_HOME/$MAIN_JAR_NAME"
+	echo ""
 
 	# Copy S3 dependencies
 	AWS_SDK_JAR_PATH=$(find $_PATH/../bin -type f -maxdepth 1 -iname 'aws*')
 	AWS_SDK_JAR_NAME=$(basename -- "$AWS_SDK_JAR_PATH")
+	echo "Copying ${AWS_SDK_JAR_NAME} to cluster..."
 	flintrock run-command $EC2_CLUSTER "[ -e '$EC2_SPARK_HOME/jars/$AWS_SDK_JAR_NAME' ] && exit 0 || exit 1"
 	if [ $? -eq 1 ]; then
 		flintrock copy-file $EC2_CLUSTER $AWS_SDK_JAR_PATH "$EC2_SPARK_HOME/jars/"
 	else
 		echo "File $AWS_SDK_JAR_NAME already present in the cluster, skipping copy."
 	fi
+	echo ""
 
 	HADOOP_AWS_JAR_PATH=$(find $_PATH/../bin -type f -maxdepth 1 -iname 'hadoop*')
 	HADOOP_AWS_JAR_NAME=$(basename -- "$HADOOP_AWS_JAR_PATH")
+	echo "Copying ${HADOOP_AWS_JAR_NAME} to cluster..."
 	flintrock run-command $EC2_CLUSTER "[ -e '$EC2_SPARK_HOME/jars/$HADOOP_AWS_JAR_NAME' ] && exit 0 || exit 1"
 	if [ $? -eq 1 ]; then
 		flintrock copy-file $EC2_CLUSTER $HADOOP_AWS_JAR_PATH "$EC2_SPARK_HOME/jars/"
 	else
 		echo "File $HADOOP_AWS_JAR_NAME already present in the cluster, skipping copy."
 	fi
-
-	# Get master DNS name
-	EC2_NAME=$(flintrock describe | grep -oP '(?<=master: )[^ ]*')
+	echo ""
 
 	# Remote launch configurations
 	if [[ $REMOTE_TYPE == "ssh" ]]; then
@@ -87,7 +94,7 @@ if [[ $DEPLOY_MODE == "remote" ]]; then
 		flintrock run-command --master-only $EC2_CLUSTER "spark-submit ${PARAMS}"
 	elif [[ $REMOTE_TYPE == "cluster" ]]; then
 		# Submit from local machine
-		spark-submit --master spark://${EC2_NAME}:7077 --deploy-mode cluster ${PARAMS}
+		spark-submit --deploy-mode cluster ${PARAMS}
 	fi
 elif [[ $DEPLOY_MODE == "local" ]]; then
 	# Define submit local parameters

@@ -31,11 +31,11 @@ sbt clean package
 Execution:
 ```bash
 spark-submit \
-	--class "main.<SomeEvaluator>" \
-	"target/scala-2.12/production-line-performance_2.12-1.0.jar"\
-	--input-path "<dataset-path>" \
+  --class "main.<SomeEvaluator>" \
+  "target/scala-2.12/production-line-performance_2.12-1.0.jar"\
+  --input-path "<dataset-path>" \
   --model-folder "<model-folder>" \
-	--classifier-name "<classifier-name>"
+  --classifier-name "<classifier-name>"
 ```
 
 Here, `<SomeEvaluator>` is the main you want to run (check the `src/main/scala/main/` package for selection), `<dataset-path>` is the path to the dataset you want to use (check the `datasets/` folder for selection), `<model-folder>` is the path to a folder where to read/write ML models for the dataset in use (check the `models/` folder for selection) and `<classifier-name>` is the name of the classifier you want to exploit (check the section below for selection).
