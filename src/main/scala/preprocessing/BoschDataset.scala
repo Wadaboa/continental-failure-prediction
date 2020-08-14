@@ -54,13 +54,15 @@ case class BoschDataset(
 
   /** Preprocesses data for classification */
   def preprocessForClassification(): Tuple2[BoschDataset, DenseMatrix] = {
-    val x = Preprocessor.nullToValues(
-      data,
+    val x = Preprocessor.dropNullColumns(data)
+    val y = Preprocessor.dropConstantColumns(x)
+    val w = Preprocessor.nullToValues(
+      y,
       method = "mean",
       exclude = Array("Id", "Response")
     )
-    val (y, pc) = Preprocessor.pca(
-      x,
+    val (z, pc) = Preprocessor.pca(
+      w,
       maxComponents = 50,
       assembleFeatures = true,
       standardizeFeatures = true,

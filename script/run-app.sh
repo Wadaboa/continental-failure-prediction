@@ -1,21 +1,34 @@
 #!/bin/bash
 
 # Check for input variables
-if [ ! -z "$1" ] && [ "$1" != "remote" ] && [ "$1" != "local" ]; then
-	echo "Usage: $0 [DEPLOY_MODE] [REMOTE_TYPE]"
-	echo "Please choose DEPLOY_MODE in {local, remote}"
+if [ ! -z "$1" ] && [ "$1" != "compile" ] && [ "$1" != "no-compile" ]; then
+	echo "Usage: $0 [COMPILE] [DEPLOY_MODE] [REMOTE_TYPE]"
+	echo "Please choose COMPILE in {compile, no-compile}"
+	exit -1
 fi
 
-if [ ! -z "$2" ] && [ "$2" != "ssh" ] && [ "$2" != "flintrock" ] && [ "$2" != "cluster" ]; then
-	echo "Usage: $0 [DEPLOY_MODE] [REMOTE_TYPE]"
+if [ ! -z "$2" ] && [ "$2" != "remote" ] && [ "$2" != "local" ]; then
+	echo "Usage: $0 [COMPILE] [DEPLOY_MODE] [REMOTE_TYPE]"
+	echo "Please choose DEPLOY_MODE in {local, remote}"
+	exit -1
+fi
+
+if [ ! -z "$3" ] && [ "$3" != "ssh" ] && [ "$3" != "flintrock" ] && [ "$3" != "cluster" ]; then
+	echo "Usage: $0 [COMPILE] [DEPLOY_MODE] [REMOTE_TYPE]"
 	echo "Please choose REMOTE_TYPE in {ssh, flintrock, cluster}"
+	exit -1
 fi
 
 # Set input variables
-DEPLOY_MODE=$1
-REMOTE_TYPE=$2
+COMPILE=$1
+DEPLOY_MODE=$2
+REMOTE_TYPE=$3
 
 # Set default values
+if [ -z "$COMPILE" ]; then
+	COMPILE="no-compile"
+fi
+
 if [ -z "$DEPLOY_MODE" ]; then
 	DEPLOY_MODE="local"
 fi
@@ -38,13 +51,22 @@ MAIN_JAR_LOCAL_PATH="$_PATH/../target/scala-2.12/$MAIN_JAR_NAME"
 # Spark submit and scala package arguments
 MAIN_CLASS="--class main.BoschEvaluator"
 DATASET="datasets/bosch/bosch-less-less.data"
-MODEL="models/bosch/"
+MODEL="models/bosch"
 CLASSIFIER_NAME="--classifier-name RF"
 
 # Compile and package app in a JAR file
-echo "Compiling project..."
-sbt clean package
-echo ""
+if [[ $COMPILE == "compile" ]]; then
+	echo "Compiling project..."
+	sbt clean package
+	echo ""
+
+	if [[ $DEPLOY_MODE == "remote" ]]; then
+		# Copy the JAR file to the running cluster using Flintrock
+		echo "Copying $MAIN_JAR_NAME to cluster..."
+		flintrock copy-file $EC2_CLUSTER $MAIN_JAR_LOCAL_PATH "$EC2_HOME/$MAIN_JAR_NAME"
+		echo ""
+	fi
+fi
 
 # Parse deploy mode
 if [[ $DEPLOY_MODE == "remote" ]]; then
@@ -56,34 +78,6 @@ if [[ $DEPLOY_MODE == "remote" ]]; then
 
 	# Load AWS credentials
 	source $_PATH/../aws-credentials.env
-
-	# Copy the JAR file to the running cluster using Flintrock
-	echo "Copying $MAIN_JAR_NAME to cluster..."
-	flintrock copy-file $EC2_CLUSTER $MAIN_JAR_LOCAL_PATH "$EC2_HOME/$MAIN_JAR_NAME"
-	echo ""
-
-	# Copy S3 dependencies
-	AWS_SDK_JAR_PATH=$(find $_PATH/../bin -type f -maxdepth 1 -iname 'aws*')
-	AWS_SDK_JAR_NAME=$(basename -- "$AWS_SDK_JAR_PATH")
-	echo "Copying ${AWS_SDK_JAR_NAME} to cluster..."
-	flintrock run-command $EC2_CLUSTER "[ -e '$EC2_SPARK_HOME/jars/$AWS_SDK_JAR_NAME' ] && exit 0 || exit 1"
-	if [ $? -eq 1 ]; then
-		flintrock copy-file $EC2_CLUSTER $AWS_SDK_JAR_PATH "$EC2_SPARK_HOME/jars/"
-	else
-		echo "File $AWS_SDK_JAR_NAME already present in the cluster, skipping copy."
-	fi
-	echo ""
-
-	HADOOP_AWS_JAR_PATH=$(find $_PATH/../bin -type f -maxdepth 1 -iname 'hadoop*')
-	HADOOP_AWS_JAR_NAME=$(basename -- "$HADOOP_AWS_JAR_PATH")
-	echo "Copying ${HADOOP_AWS_JAR_NAME} to cluster..."
-	flintrock run-command $EC2_CLUSTER "[ -e '$EC2_SPARK_HOME/jars/$HADOOP_AWS_JAR_NAME' ] && exit 0 || exit 1"
-	if [ $? -eq 1 ]; then
-		flintrock copy-file $EC2_CLUSTER $HADOOP_AWS_JAR_PATH "$EC2_SPARK_HOME/jars/"
-	else
-		echo "File $HADOOP_AWS_JAR_NAME already present in the cluster, skipping copy."
-	fi
-	echo ""
 
 	# Remote launch configurations
 	if [[ $REMOTE_TYPE == "ssh" ]]; then

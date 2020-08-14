@@ -55,9 +55,9 @@ export AWS_SESSION_TOKEN
 3. Make sure that you have created a IAM role, named `ec2-s3`, with service `ec2` and policies `AmazonS3FullAccess`, `AmazonElasticMapReduceforEC2Role`.
 4. Run the script `script/create-aws-cluster.sh`, which will create a cluster named `production-line-performance`.
 5. Make sure that you have created an S3 bucket, named `production-line-performance`, containing the `datasets/` folder present in the root of the project.
-6. Run the script `script/run-app.sh remote` and check the execution at `<ec2-master>:8080`, where `<ec2-master>` is the DNS name of the EC2's cluster master node (you can check it using the command `flintrock describe`, field `master`).
+6. Run the script `script/run-app.sh compile remote` and check the execution at `<ec2-master>:8080`, where `<ec2-master>` is the DNS name of the EC2's cluster master node (you can check it using the command `flintrock describe`, field `master`).
 
-_Note_: You can also use the `script/run-app.sh` script to run the application locally. To do so, you just have to launch `script/run-app.sh`, without passing any additional parameter, or execute `script/run-app.sh local`.
+_Note_: You can also use the `script/run-app.sh` script to run the application locally. To do so, you just have to launch `script/run-app.sh`, without passing any additional parameter, or execute `script/run-app.sh compile local`.
 
 ## Supported classifiers
 

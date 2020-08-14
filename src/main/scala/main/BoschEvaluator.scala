@@ -55,6 +55,10 @@ object BoschEvaluator {
         case (v, d) => {
           var newData = preprocessed.data
             .join(d.select("Id"), Seq("Id"), "inner")
+          Logger.info(s"Showing data for cluster #${v}")
+          preprocessed.show()
+          d.select("Id").show()
+          newData.show()
           var (toClassify, pc) = BoschDataset(inputData = Some(newData))
             .preprocessForClassification()
           classifiersPc += (v.asInstanceOf[Int] -> pc)
