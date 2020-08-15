@@ -39,13 +39,8 @@ fi
 
 # Set useful variables
 _PATH=$(dirname "$(realpath $0)")
-EC2_NAME=$(flintrock describe | grep -oP '(?<=master: )[^ ]*')
-EC2_CLUSTER=$(flintrock describe --master-hostname-only | grep -oP '(?<=INFO  - )[^ ]*' | sed 's/.$//')
-EC2_USER="ec2-user"
-EC2_HOME="/home/$EC2_USER"
-EC2_SPARK_HOME="$EC2_HOME/spark"
-S3_BUCKET_LINK="s3a://$EC2_CLUSTER"
-MAIN_JAR_NAME="${EC2_CLUSTER}_2.12-1.0.jar"
+APP_NAME="production-line-performance"
+MAIN_JAR_NAME="${APP_NAME}_2.12-1.0.jar"
 MAIN_JAR_LOCAL_PATH="$_PATH/../target/scala-2.12/$MAIN_JAR_NAME"
 
 # Spark submit and scala package arguments
@@ -59,25 +54,33 @@ if [[ $COMPILE == "compile" ]]; then
 	echo "Compiling project..."
 	sbt clean package
 	echo ""
-
-	if [[ $DEPLOY_MODE == "remote" ]]; then
-		# Copy the JAR file to the running cluster using Flintrock
-		echo "Copying $MAIN_JAR_NAME to cluster..."
-		flintrock copy-file $EC2_CLUSTER $MAIN_JAR_LOCAL_PATH "$EC2_HOME/$MAIN_JAR_NAME"
-		echo ""
-	fi
 fi
 
 # Parse deploy mode
 if [[ $DEPLOY_MODE == "remote" ]]; then
+	# Load AWS credentials
+	source $_PATH/../aws-credentials.env
+
+	# Set useful variables
+	EC2_NAME=$(flintrock describe | grep -oP '(?<=master: )[^ ]*')
+	EC2_CLUSTER=$(flintrock describe --master-hostname-only | grep -oP '(?<=INFO  - )[^ ]*' | sed 's/.$//')
+	EC2_USER="ec2-user"
+	EC2_HOME="/home/$EC2_USER"
+	EC2_SPARK_HOME="$EC2_HOME/spark"
+	S3_BUCKET_LINK="s3a://$EC2_CLUSTER"
+
 	# Define submit remote parameters
 	MASTER="--master spark://${EC2_NAME}:7077"
 	INPUT_PATH="--input-path $S3_BUCKET_LINK/$DATASET"
 	MODEL_FOLDER="--model-folder $S3_BUCKET_LINK/$MODEL"
 	PARAMS="$MASTER $MAIN_CLASS $EC2_HOME/$MAIN_JAR_NAME $INPUT_PATH $MODEL_FOLDER $CLASSIFIER_NAME"
 
-	# Load AWS credentials
-	source $_PATH/../aws-credentials.env
+	# Copy the JAR file to the running cluster using Flintrock, if re-compiled
+	if [[ $COMPILE == "compile" ]]; then
+		echo "Copying $MAIN_JAR_NAME to cluster..."
+		flintrock copy-file $EC2_CLUSTER $MAIN_JAR_LOCAL_PATH "$EC2_HOME/$MAIN_JAR_NAME"
+		echo ""
+	fi
 
 	# Remote launch configurations
 	if [[ $REMOTE_TYPE == "ssh" ]]; then

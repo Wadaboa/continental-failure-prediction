@@ -10,6 +10,7 @@ import org.apache.spark.ml.linalg.{Vector, SparseVector}
 import org.apache.spark.mllib.linalg.{Vectors => OldVectors}
 import breeze.linalg.{DenseVector => BDV}
 
+/** The following inertia implementation was taken from an old version of Spark */
 object EuclideanInertia {
 
   /** Computes the Within Set Sum of Squared Errors */

@@ -158,8 +158,10 @@ object Preprocessor {
     return applyOverColumns(
       data,
       c => {
-        if (!exclude.contains(c)) when(c.isNull, 1).otherwise(0)
-        else c
+        if (!exclude.contains(c.toString)) {
+          Logger.info(s"Converting column ${c} to 0/1 values")
+          when(c.isNull, 0).otherwise(1)
+        } else c
       }
     )
   }

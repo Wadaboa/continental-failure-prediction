@@ -77,6 +77,7 @@ The following is a description of files/folder which were not mentioned above:
 
 ## Notes
 * AWS Educate account credentials change after 3 hours (the given session expires). In order to get them again you have to log in to [AWS Educate](https://aws.amazon.com/it/education/awseducate/), click on `AWS Account` and on the orange button labeled as `AWS Educate Starter Account`, which will take you to [Vocareum](https://labs.vocareum.com). On `Vocareum`, you can either go the [AWS Console](https://console.aws.amazon.com/) or copy/paste the session keys (`Account Details` section) into `~/.aws/credentials` (to use [awscli](https://aws.amazon.com/it/cli/)), or in `aws-credentials.env` (for this project).
+* If you change your password on `Vocareum`, you will be able to access it [directly](https://labs.vocareum.com), instead of going through AWS Educate, but the link from AWS Educate will not work anymore.
 * AWS Educate account supports only the following EC2 instance types: `m4.large`, `m4.xlarge`, `m5.large`, `m5.xlarge`, `m5.2xlarge`, `c4.large`, `c4.xlarge`, `c5.large`, `c5.xlarge`, `t2.nano`, `t2.micro`, `t2.small`, `t2.medium`, `t2.large`, `t2.xlarge`, `t2.2xlarge`.
 * AWS Educate account supports only services in `us-east-1` region.
 * AWS Educate account highly limits IAM management.

@@ -69,7 +69,7 @@ case class BoschDataset(
       explainedVariance = 0.95,
       exclude = Array("Id", "Response")
     )
-    return (BoschDataset(inputData = Some(y)), pc)
+    return (BoschDataset(inputData = Some(z)), pc)
   }
 
 }

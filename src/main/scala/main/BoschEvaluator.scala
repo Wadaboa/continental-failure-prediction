@@ -53,14 +53,13 @@ object BoschEvaluator {
     val classifiers: Map[Int, Predictor[_]] =
       splittedData.map({
         case (v, d) => {
+          Logger.info(s"Preprocessing data for cluster #${v}")
           var newData = preprocessed.data
             .join(d.select("Id"), Seq("Id"), "inner")
-          Logger.info(s"Showing data for cluster #${v}")
-          preprocessed.show()
-          d.select("Id").show()
-          newData.show()
           var (toClassify, pc) = BoschDataset(inputData = Some(newData))
             .preprocessForClassification()
+          Logger.info(s"Showing data for cluster #${v}")
+          toClassify.show()
           classifiersPc += (v.asInstanceOf[Int] -> pc)
           (
             v.asInstanceOf[Int],
@@ -72,11 +71,17 @@ object BoschEvaluator {
     // Train each classifier and print results
     classifiers.foreach({
       case (v, c) => {
+        Logger.info(
+          s"Training the classifier associated with cluster #${v}"
+        )
         var classifierModelFile =
           s"${modelFolder.orNull.toString}/bosch-${classifierName.orNull.toString}-${v}.ml"
         if (fileExists(classifierModelFile)) c.load(classifierModelFile)
         else c.train(assemble = false)
         var predictions = c.test()
+        Logger.info(
+          s"Showing predictions for the classifier associated with cluster #${v}"
+        )
         predictions.show()
         var accuracy = c.evaluate(predictions, metricName = "accuracy")
         var fscore = c.evaluate(predictions, metricName = "f1")
