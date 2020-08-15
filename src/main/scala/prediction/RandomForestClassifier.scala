@@ -17,7 +17,7 @@ case class RandomForestClassifier(dataset: Dataset)
 
   var impurity: String = "entropy"
   var numTrees: Int = 100
-  var maxDepth: Int = 30
+  var maxDepth: Int = 25
   var maxBins: Int = 64
   var minSamplesLeaf: Int = 10
 
@@ -34,13 +34,8 @@ case class RandomForestClassifier(dataset: Dataset)
 
   override def paramGrid: Array[ParamMap] = {
     return new ParamGridBuilder()
-      .addGrid(model.numTrees, (1 to numTrees by 10).toArray)
-      .addGrid(model.maxDepth, (1 to maxDepth by 5).toArray)
-      .addGrid(
-        model.maxBins,
-        (dataset.maxDistinctValues to maxBins by 10).toArray
-      )
-      .addGrid(model.minInstancesPerNode, (1 to minSamplesLeaf by 2).toArray)
+      .addGrid(model.maxDepth, (15 to maxDepth by 5).toArray)
+      .addGrid(model.minInstancesPerNode, (5 to minSamplesLeaf by 2).toArray)
       .build()
   }
 

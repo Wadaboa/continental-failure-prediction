@@ -38,8 +38,8 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
   var featuresCol: String = "features"
   var predictionCol: String = "prediction"
   var metricName: String = "accuracy"
-  var cvFolds: Int = 5
-  var cvConcurrency: Int = 2
+  var cvFolds: Int = 3
+  var cvConcurrency: Int = 3
 
   val Array(trainingData, testData) =
     dataset.data.randomSplit(Array(0.8, 0.2), seed = Utils.seed)
@@ -100,10 +100,16 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
   /** Defines the parameter grid to use in cross-validation */
   def paramGrid: Array[ParamMap]
 
+  /** Defines the default evaluator */
+  def defaultEvaluator: Evaluator
+
   /** Trains the model */
   def train(assemble: Boolean = true, validate: Boolean = false): Unit = {
     if (!validate) trainedModel = pipeline(assemble).fit(trainingData)
     else {
+      Logger.info(
+        s"Estimator param map: ${paramGrid.mkString("[", ", ", "]")}"
+      )
       trainedModel = new CrossValidator()
         .setEstimator(pipeline(assemble))
         .setEvaluator(defaultEvaluator)
@@ -124,9 +130,6 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
   def predict(data: DataFrame): DataFrame = {
     return trainedModel.transform(data)
   }
-
-  /** Defines the default evaluator */
-  def defaultEvaluator: Evaluator
 
   /** Evaluates predictions */
   def evaluate(

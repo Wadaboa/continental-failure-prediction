@@ -308,6 +308,25 @@ Numbers={OldStyle}]{Fira Sans Light}
 
 % Results section
 \section{Results}
+\begin{frame}
+  \frametitle{Data \texttt{bosch-less-less}}
+  \begin{itemize}
+    \item Number of examples (random subset): \num{11432}
+    \item Number of features (random subset): $52$
+    \item Percentage of failures: $0.0056\%$
+    \item Identified number of clusters: $8$
+    \item Random Forest model with/without cross-validation:
+      \begin{itemize}
+        \item Accuracy/F1 score/Area under ROC: Almost $1.0$ for each classifier
+        \item MCC score/Percentage of correctly predicted failures: Around $0.0$ on every classifier (near random prediction)
+      \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Data \texttt{bosch-less}}
+  
+\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Appendix %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

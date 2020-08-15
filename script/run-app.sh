@@ -46,7 +46,7 @@ MAIN_JAR_LOCAL_PATH="$_PATH/../target/scala-2.12/$MAIN_JAR_NAME"
 # Spark submit and scala package arguments
 MAIN_CLASS="--class main.BoschEvaluator"
 DATASET="datasets/bosch/bosch-less-less.data"
-MODEL="models/bosch"
+MODEL="models/bosch/bosch-less-less"
 CLASSIFIER_NAME="--classifier-name RF"
 
 # Compile and package app in a JAR file

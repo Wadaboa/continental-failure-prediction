@@ -31,10 +31,6 @@ case class GradientBoostedClassifier(dataset: Dataset)
   override def paramGrid: Array[ParamMap] = {
     return new ParamGridBuilder()
       .addGrid(model.maxDepth, (1 to maxDepth by 5).toArray)
-      .addGrid(
-        model.maxBins,
-        (dataset.maxDistinctValues to maxBins by 10).toArray
-      )
       .addGrid(model.minInstancesPerNode, (1 to minSamplesLeaf by 2).toArray)
       .build()
   }

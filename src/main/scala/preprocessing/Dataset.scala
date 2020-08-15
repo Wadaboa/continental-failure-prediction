@@ -49,12 +49,15 @@ trait DatasetProperty {
     }
 
     // Load the dataset
-    return reader
+    val data = reader
       .format("csv")
       .option("delimiter", delimiter)
       .option("header", "true")
       .option("mode", "DROPMALFORMED")
       .load(inputPath)
+
+    Logger.info(s"Data shape: (${data.count()}, ${data.columns.size})")
+    return data
   }
 
 }
@@ -107,6 +110,9 @@ abstract class Dataset(
 
   /** Returns the DataFrame's rows number */
   def getNumRows(): Int = data.count.toInt
+
+  /** Returns the DataFrame's columns number */
+  def getNumCols(): Int = data.columns.size
 
   /** Shows the DataFrame */
   def show(): Unit = data.show()

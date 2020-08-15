@@ -128,6 +128,11 @@ object Utils {
       .toMap
   }
 
+  /** Returns the number of rows with each distinct value in the given column */
+  def distinctValuesCount(data: DataFrame, column: String): DataFrame = {
+    return data.groupBy(column).count()
+  }
+
 }
 
 object Spark {
