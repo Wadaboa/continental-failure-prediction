@@ -7,7 +7,7 @@ services:
     version: 2.8.5
 
 launch:
-  num-slaves: 1
+  num-slaves: 3
   install-spark: True
   install-hdfs: True
 
@@ -15,7 +15,7 @@ providers:
   ec2:
     key-name: my-key-pair
     identity-file: my-key-pair.pem
-    instance-type: t2.xlarge
+    instance-type: t2.2xlarge
     region: us-east-1
     ami: ami-0f84e2a3635d2fac9
     user: ec2-user

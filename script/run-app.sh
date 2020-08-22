@@ -45,8 +45,8 @@ MAIN_JAR_LOCAL_PATH="$_PATH/../target/scala-2.12/$MAIN_JAR_NAME"
 
 # Spark submit and scala package arguments
 MAIN_CLASS="--class main.BoschEvaluator"
-DATASET="datasets/bosch/bosch-less-less.data"
-MODEL="models/bosch/bosch-less-less"
+DATASET="datasets/bosch/bosch-less.data"
+MODEL="models/bosch/bosch-less"
 CLASSIFIER_NAME="--classifier-name RF"
 
 # Compile and package app in a JAR file
@@ -73,7 +73,8 @@ if [[ $DEPLOY_MODE == "remote" ]]; then
 	MASTER="--master spark://${EC2_NAME}:7077"
 	INPUT_PATH="--input-path $S3_BUCKET_LINK/$DATASET"
 	MODEL_FOLDER="--model-folder $S3_BUCKET_LINK/$MODEL"
-	PARAMS="$MASTER $MAIN_CLASS $EC2_HOME/$MAIN_JAR_NAME $INPUT_PATH $MODEL_FOLDER $CLASSIFIER_NAME"
+	CONFS="--conf spark.executor.cores=3 --conf spark.executor.memory=16g --conf spark.executor.instances=5 --conf spark.driver.cores=3 --conf spark.driver.memory=16g --conf spark.default.parallelism=30 --conf spark.sql.shuffle.partitions=30"
+	PARAMS="$MASTER $CONFS $MAIN_CLASS $EC2_HOME/$MAIN_JAR_NAME $INPUT_PATH $MODEL_FOLDER $CLASSIFIER_NAME"
 
 	# Copy the JAR file to the running cluster using Flintrock, if re-compiled
 	if [[ $COMPILE == "compile" ]]; then

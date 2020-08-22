@@ -299,9 +299,10 @@ Numbers={OldStyle}]{Fira Sans Light}
     \end{itemize}
     \item \textbf{Cloud}: 
       \begin{itemize}
-        \item<.-> \textbf{Type}: \texttt{t2.xlarge}
-        \item<.-> \textbf{CPU}: 4 vCPUs based on Intel Xeon with Intel AVX, Intel Turbo
-        \item<.-> \textbf{RAM}: 16 GB
+        \item<.-> \textbf{Type}: \texttt{t2.2xlarge}
+        \item<.-> \textbf{Workers}: 3
+        \item<.-> \textbf{Total \#cores}: 24
+        \item<.-> \textbf{Total RAM}: 91.2 GB
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -312,7 +313,7 @@ Numbers={OldStyle}]{Fira Sans Light}
   \frametitle{Data \texttt{bosch-less-less}}
   \begin{itemize}
     \item Number of examples (random subset): \num{11432}
-    \item Number of features (random subset): $52$
+    \item Number of features (random subset): $50$
     \item Percentage of failures: $0.0056\%$
     \item Identified number of clusters: $8$
     \item Random Forest model with/without cross-validation:
@@ -325,7 +326,11 @@ Numbers={OldStyle}]{Fira Sans Light}
 
 \begin{frame}
   \frametitle{Data \texttt{bosch-less}}
-  
+  \begin{itemize}
+    \item Number of examples: \num{13758}
+    \item Number of features: $968$
+    \item Percentage of failures: $50\%$
+  \end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
