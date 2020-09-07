@@ -27,7 +27,8 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
       .setFeaturesCol(featuresCol)
       .setPredictionCol(predictionCol)
 
-  override def train(): Unit = {
+  /** Automatically finds the best number of clusters */
+  def findNumClusters(): Unit = {
     model = getNewModel(minClusters)
     trainedModel = model.fit(dataset.data)
     var gapResult = evaluate(
@@ -66,6 +67,18 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
       previousGap = gap
       previousModel = model
       previousTrainedModel = trainedModel
+    }
+  }
+
+  override def train(): Unit = {
+    numClusters match {
+      case Some(k) => {
+        model = getNewModel(k)
+        return super.train()
+      }
+      case _ => {
+        findNumClusters()
+      }
     }
   }
 

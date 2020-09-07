@@ -31,6 +31,7 @@ abstract class Clusterer(dataset: Dataset) {
   var featuresCol: String = "features"
   var predictionCol: String = "prediction"
   var metricName: String
+  var numClusters: Option[Int] = None
   var minClusters: Int = 2
   var maxClusters: Int = dataset.getNumRows()
 
