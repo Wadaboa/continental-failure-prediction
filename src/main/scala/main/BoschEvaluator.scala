@@ -55,7 +55,7 @@ object BoschEvaluator {
 
     // Define classifiers based on the clustering output and train them
     Logger.info(
-      s"Number of partitions for common preprocessed data: ${preprocessed.data.rdd.getNumPartitions})"
+      s"Number of partitions for common preprocessed data: ${preprocessed.data.rdd.getNumPartitions}"
     )
     val splittedData = Utils.splitDataFrame(predictions, kmeans.predictionCol)
     var classifiersPc: Map[Int, DenseMatrix] = Map()

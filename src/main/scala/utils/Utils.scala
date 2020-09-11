@@ -6,13 +6,13 @@ import Numeric.Implicits._
 import org.apache.log4j.{Logger => L}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Row, DataFrame, SparkSession}
-import org.apache.spark.sql.functions.{
-  col,
-  monotonically_increasing_id,
-  when,
-  rand
+import org.apache.spark.sql.functions.{col, when, rand}
+import org.apache.spark.sql.types.{
+  StructType,
+  DoubleType,
+  StructField,
+  LongType
 }
-import org.apache.spark.sql.types.{StructType, DoubleType, StructField}
 import org.apache.spark.ml.linalg.{Vector, DenseMatrix}
 
 object Logger extends Serializable {
@@ -58,9 +58,11 @@ object Utils {
 
   /** Converts a DataFrame Row to Array[Double] */
   def rowToArrayOfDouble(record: Row): Array[Double] =
-    (for {
-      i <- (0 until record.size).filter(x => !record.isNullAt(x))
-    } yield record.getDouble(i)).toArray
+    (
+      for {
+        i <- (0 until record.size).filter(x => !record.isNullAt(x))
+      } yield record.getDouble(i)
+    ).toArray
 
   /** Converts a DataFrame Column to Array[Double] */
   def colToArrayOfDouble(data: DataFrame, column: String): Array[Double] =
@@ -75,6 +77,20 @@ object Utils {
   /** Keep a value within a specific range */
   def clip(x: Int, min: Int, max: Int) = math.max(min, math.min(max, x))
 
+  /**
+    * Adds a column representing row indexes to the given DataFrame
+    */
+  def addRowIndexes(data: DataFrame, colName: String = "index"): DataFrame = {
+    val spark = Spark.session
+    val rdd = data.rdd.zipWithIndex.map {
+      case (row, index) => Row.fromSeq(row.toSeq :+ index)
+    }
+    val schema = StructType(
+      data.schema.fields :+ StructField(colName, LongType, false)
+    )
+    return spark.createDataFrame(rdd, schema)
+  }
+
   /** Merges two DataFrames, even if they have different columns
     * (though, they must have the same number of rows)
     */
@@ -83,9 +99,13 @@ object Utils {
       dataOne.count == dataTwo.count,
       "The two DataFrames must have the same number of rows."
     )
-    val df1 = dataOne.withColumn("_tmp_id", monotonically_increasing_id())
-    val df2 = dataTwo.withColumn("_tmp_id", monotonically_increasing_id())
-    return df1.join(df2, ("_tmp_id")).drop("_tmp_id")
+
+    val colName = "_tmp_id"
+    val df1 = addRowIndexes(dataTwo, colName = colName)
+    val df2 = addRowIndexes(dataOne, colName = colName)
+    return df1
+      .join(df2, Seq(colName))
+      .drop(colName)
   }
 
   /** Adds a column with random 0/1 values to the given DataFrame */
