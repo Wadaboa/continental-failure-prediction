@@ -24,7 +24,8 @@ import org.apache.spark.sql.functions.{
   udf,
   lit,
   sum,
-  countDistinct
+  countDistinct,
+  approx_count_distinct
 }
 
 object Preprocessor {
@@ -34,11 +35,11 @@ object Preprocessor {
       data: DataFrame,
       p: Double = 0.5
   ): DataFrame = {
-    val Array(toReturn, toDrop) =
-      data.randomSplit(Array(p, 1 - p), seed = Utils.seed)
     Logger.info(
       s"Retrieving a random subset of samples of dimension ${p * data.count}"
     )
+    val Array(toReturn, toDrop) =
+      data.randomSplit(Array(p, 1 - p), seed = Utils.seed)
     return toReturn
   }
 
@@ -48,48 +49,72 @@ object Preprocessor {
     return sum(pred.cast("integer"))
   }
 
-  /** Removes columns with all null values */
-  def dropNullColumns(data: DataFrame): DataFrame = {
-    val numRows = data.count.toInt
-    val counts = data.columns
-      .map(c =>
-        (c, data.agg(countNulls(col(c), nanAsNull = true)).first.getLong(0))
-      )
-    val toDrop = counts.filter(x => x._2 == numRows).map(_._1)
-    Logger.info(s"Dropping null columns: ${toDrop.mkString("[", ", ", "]")}")
-    return dropColumns(data, toDrop: _*)
-  }
+  /** Removes columns where all values are the same,
+    * including all null columns
+    */
+  def dropConstantColumns(
+      data: DataFrame,
+      approx: Boolean = true
+  ): DataFrame = {
+    Logger.info(s"Dropping null/constant columns")
 
-  /** Removes columns where all values are the same */
-  def dropConstantColumns(data: DataFrame): DataFrame = {
-    val counts = data.columns
-      .map(c => (c, data.agg(countDistinct(c)).first.getLong(0)))
-    val toDrop = counts.filter(x => x._2 == 1).map(_._1)
-    Logger.info(
-      s"Dropping constant columns: ${toDrop.mkString("[", ", ", "]")}"
+    // Defines a lambda expression based on the value
+    // of the `approx` parameter
+    val count = (columnName: String) => {
+      if (!approx) countDistinct(columnName)
+      else approx_count_distinct(columnName)
+    }
+
+    // Computes a new row containing 0 for columns to drop
+    // and 1 for columns to keep
+    val row = data
+      .select(
+        data.columns.map(c =>
+          when(count(c).isInCollection(Array(0, 1)), 0)
+            .otherwise(1)
+            .as(c)
+        ): _*
+      )
+      .groupBy()
+      .max()
+      .head()
+
+    // Selects columns to keep
+    val toKeep = row
+      .getValuesMap[Int](row.schema.fieldNames)
+      .map { c => if (c._2 == 1) Some(c._1) else None }
+      .flatten
+      .toArray
+
+    // Returns columns to keep (removing the max() substring)
+    return data.select(
+      row.schema.fieldNames
+        .intersect(toKeep)
+        .map(c => col(c.drop(4).dropRight(1))): _*
     )
-    return dropColumns(data, toDrop: _*)
   }
 
   /** Drops duplicated rows in the DataFrame */
   def dropDuplicates(data: DataFrame): DataFrame = {
+    Logger.info(s"Dropping non-unique rows")
     return data.dropDuplicates()
   }
 
   /** Drops the given list of columns */
   def dropColumns(data: DataFrame, toDrop: String*): DataFrame = {
+    Logger.info(s"Dropping columns: ${toDrop.mkString("[", ", ", "]")}")
     return data.drop(toDrop: _*)
   }
 
   /** Maintains only the given list of columns */
   def maintainColumns(data: DataFrame, toMaintain: Array[String]): DataFrame = {
     val toDrop = data.columns.filterNot(c => toMaintain.contains(c))
-    Logger.info(s"Dropping columns: ${toDrop.mkString("[", ", ", "]")}")
     return dropColumns(data, toDrop: _*)
   }
 
   /** Drops rows that contain at least one null value */
   def dropNullRows(data: DataFrame): DataFrame = {
+    Logger.info(s"Dropping rows containing any null or NaN values")
     return data.na.drop
   }
 
@@ -102,14 +127,18 @@ object Preprocessor {
 
   /** Drops rows that contain the given value */
   def removeRowsWithValue(data: DataFrame, value: String): DataFrame = {
-    val dfs = data.columns.map(c => {
+    Logger.info(
+      s"Dropping rows containing the value ${value} in at least one column"
+    )
+    val df = data.columns.map(c => {
       data.filter(col(c) !== value)
     })
-    return dfs.reduceRight(_ intersect _)
+    return df.reduceRight(_ intersect _)
   }
 
   /** Substitutes values matching the given one to null values in the DataFrame */
   def valuesToNull(data: DataFrame, value: String): DataFrame = {
+    Logger.info(s"Converting values ${value} to null")
     return applyOverColumns(
       data,
       c => when(c.equalTo(value), null).otherwise(c)
@@ -122,6 +151,10 @@ object Preprocessor {
       method: String = "mean",
       exclude: Array[String] = Array()
   ): DataFrame = {
+    Logger.info(
+      s"Applying ${method} feature imputation, excluding columns " +
+        s"${exclude.mkString("[", ", ", "]")}"
+    )
     val cols = data.columns.filterNot(c => exclude.contains(c))
     val mappedCols = cols.map(c => s"T${c}")
     val imputer = new Imputer()
@@ -137,6 +170,7 @@ object Preprocessor {
 
   /** Trims column names and DataFrame values */
   def trimValues(data: DataFrame): DataFrame = {
+    Logger.info(s"Trimming column names and DataFrame values")
     val dataTypes: Map[String, String] = data.dtypes.toMap
     var newData = data.columns.foldLeft(data) { (df, c) =>
       df.withColumnRenamed(c, c.replaceAll("\\s", ""))
@@ -179,6 +213,8 @@ object Preprocessor {
       explainedVariance > 0 && explainedVariance <= 1,
       "Invalid value for the explainedVariance parameter."
     )
+
+    Logger.info(s"Performing Principal Components Analysis")
 
     // Assemble input features into a single vector
     val featuresCol = "features"
@@ -234,6 +270,7 @@ object Preprocessor {
       vectorCol: String,
       maintainVector: Boolean = false
   ): DataFrame = {
+    Logger.info(s"Converting vector column ${vectorCol} to single columns")
     val size = data.select(vectorCol).first.getAs[Vector](0).size
     var exprs =
       (0 until size).map(i => col("_tmp_vec").getItem(i).alias(s"f$i"))
@@ -252,6 +289,7 @@ object Preprocessor {
       featuresCol: String,
       maintain: Array[String] = Array()
   ): DataFrame = {
+    Logger.info(s"Transforming features to principal components")
     val transposed = pc.transpose
     val transformer = udf { vector: Vector => transposed.multiply(vector) }
     return data
@@ -270,6 +308,10 @@ object Preprocessor {
       columnName: String,
       splits: Array[Double]
   ): DataFrame = {
+    Logger.info(
+      s"Binning column ${columnName} with splits ${splits.mkString("[", ", ", "]")}"
+    )
+
     val bucketizer = new Bucketizer()
       .setInputCol(columnName)
       .setOutputCol(s"T${columnName}")
@@ -287,6 +329,10 @@ object Preprocessor {
       columnName: String,
       numBuckets: Int
   ): DataFrame = {
+    Logger.info(
+      s"Discretizing column ${columnName} to ${numBuckets} quantiles"
+    )
+
     val discretizer = new QuantileDiscretizer()
       .setInputCol(columnName)
       .setOutputCol(s"T${columnName}")
@@ -305,6 +351,9 @@ object Preprocessor {
       outputCol: String,
       inputCols: Option[Array[String]] = None
   ): DataFrame = {
+    Logger.info(
+      s"Assembling columns ${inputCols.mkString("[", ", ", "]")} into column ${outputCol}"
+    )
     var assembler = new VectorAssembler()
     inputCols match {
       case Some(value) => assembler = assembler.setInputCols(value)
@@ -322,6 +371,7 @@ object Preprocessor {
       withMean: Boolean = true,
       withStd: Boolean = true
   ): DataFrame = {
+    Logger.info(s"Standardizing column ${inputCol}")
     return new StandardScaler()
       .setWithMean(withMean)
       .setWithStd(withStd)

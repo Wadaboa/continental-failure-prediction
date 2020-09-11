@@ -58,8 +58,9 @@ object BoschEvaluator {
       s"Number of partitions for common preprocessed data: ${preprocessed.data.rdd.getNumPartitions}"
     )
     val splittedData = Utils.splitDataFrame(predictions, kmeans.predictionCol)
+    val bSplittedData = Spark.context.broadcast(splittedData)
     var classifiersPc: Map[Int, DenseMatrix] = Map()
-    splittedData.foreach({
+    bSplittedData.value.foreach({
       case (v, d) => {
         // Preprocess clustered data for classification
         Logger.info(s"Preprocessing data for cluster #${v}")

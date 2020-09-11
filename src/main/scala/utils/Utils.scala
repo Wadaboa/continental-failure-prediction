@@ -100,6 +100,8 @@ object Utils {
       "The two DataFrames must have the same number of rows."
     )
 
+    Logger.info("Merging DataFrames")
+
     val colName = "_tmp_id"
     val df1 = addRowIndexes(dataTwo, colName = colName)
     val df2 = addRowIndexes(dataOne, colName = colName)
@@ -121,6 +123,9 @@ object Utils {
       numCols: Int,
       range: Tuple2[Double, Double] = (0, 100)
   ): DataFrame = {
+    Logger.info(
+      s"Creating random DataFrame of shape (${numRows}, ${numCols}), in range ${range}"
+    )
     val columns = 1 to numCols map (i => "col-" + i)
     val schema = StructType(columns.map(StructField(_, DoubleType)))
     val (a, b) = range
@@ -143,6 +148,7 @@ object Utils {
       data: DataFrame,
       splitCol: String
   ): Map[Any, DataFrame] = {
+    Logger.info(s"Splitting DataFrame on column ${splitCol}")
     val states = data.select(splitCol).distinct.collect.flatMap(_.toSeq)
     return states
       .map(state => (state -> data.where(col(splitCol) <=> state)))

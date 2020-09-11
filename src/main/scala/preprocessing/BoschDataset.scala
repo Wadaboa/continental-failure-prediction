@@ -28,7 +28,6 @@ case class BoschDataset(
   /** Common preprocessing for both clustering and classification steps */
   def preprocessCommon(): BoschDataset = {
     val funcs = Seq(
-      Preprocessor.dropNullColumns(_: DataFrame),
       Preprocessor.dropConstantColumns(_: DataFrame)
     )
     return BoschDataset(inputData = Some(funcs.foldLeft(data) { (r, f) =>
@@ -55,15 +54,14 @@ case class BoschDataset(
 
   /** Preprocesses data for classification */
   def preprocessForClassification(): Tuple2[BoschDataset, DenseMatrix] = {
-    val x = Preprocessor.dropNullColumns(data)
-    val y = Preprocessor.dropConstantColumns(x)
-    val w = Preprocessor.nullToValues(
-      y,
+    val x = Preprocessor.dropConstantColumns(data)
+    val y = Preprocessor.nullToValues(
+      x,
       method = "mean",
       exclude = Array("Id", "Response")
     )
     val (z, pc) = Preprocessor.pca(
-      w,
+      y,
       maxComponents = 50,
       assembleFeatures = true,
       standardizeFeatures = true,
