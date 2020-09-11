@@ -128,7 +128,7 @@ object Preprocessor {
   /** Drops rows that contain the given value */
   def removeRowsWithValue(data: DataFrame, value: String): DataFrame = {
     Logger.info(
-      s"Dropping rows containing the value ${value} in at least one column"
+      s"""Dropping rows containing the value "${value}" in at least one column"""
     )
     val df = data.columns.map(c => {
       data.filter(col(c) !== value)
@@ -138,7 +138,7 @@ object Preprocessor {
 
   /** Substitutes values matching the given one to null values in the DataFrame */
   def valuesToNull(data: DataFrame, value: String): DataFrame = {
-    Logger.info(s"Converting values ${value} to null")
+    Logger.info(s"""Converting values "${value}" to null""")
     return applyOverColumns(
       data,
       c => when(c.equalTo(value), null).otherwise(c)
@@ -193,7 +193,7 @@ object Preprocessor {
       data,
       c => {
         if (!exclude.contains(c.toString)) {
-          Logger.info(s"Converting column ${c} to 0/1 values")
+          Logger.info(s"""Converting column "${c}" to 0/1 values""")
           when(c.isNull, 0).otherwise(1)
         } else c
       }
@@ -270,7 +270,9 @@ object Preprocessor {
       vectorCol: String,
       maintainVector: Boolean = false
   ): DataFrame = {
-    Logger.info(s"Converting vector column ${vectorCol} to single columns")
+    Logger.info(
+      s"""Converting vector column "${vectorCol}" to single columns"""
+    )
     val size = data.select(vectorCol).first.getAs[Vector](0).size
     var exprs =
       (0 until size).map(i => col("_tmp_vec").getItem(i).alias(s"f$i"))
@@ -308,9 +310,11 @@ object Preprocessor {
       columnName: String,
       splits: Array[Double]
   ): DataFrame = {
+    // format: off
     Logger.info(
-      s"Binning column ${columnName} with splits ${splits.mkString("[", ", ", "]")}"
+      s"""Binning column "${columnName}" with splits ${splits.mkString("[", ", ", "]")}"""
     )
+    // format: on
 
     val bucketizer = new Bucketizer()
       .setInputCol(columnName)
@@ -330,7 +334,7 @@ object Preprocessor {
       numBuckets: Int
   ): DataFrame = {
     Logger.info(
-      s"Discretizing column ${columnName} to ${numBuckets} quantiles"
+      s"""Discretizing column "${columnName}" to ${numBuckets} quantiles"""
     )
 
     val discretizer = new QuantileDiscretizer()
@@ -351,9 +355,12 @@ object Preprocessor {
       outputCol: String,
       inputCols: Option[Array[String]] = None
   ): DataFrame = {
+    // format: off
     Logger.info(
-      s"Assembling columns ${inputCols.mkString("[", ", ", "]")} into column ${outputCol}"
+      s"""Assembling columns ${inputCols.mkString("[", ", ", "]")} into column "${outputCol}""""
     )
+    // format: on
+
     var assembler = new VectorAssembler()
     inputCols match {
       case Some(value) => assembler = assembler.setInputCols(value)
@@ -371,7 +378,7 @@ object Preprocessor {
       withMean: Boolean = true,
       withStd: Boolean = true
   ): DataFrame = {
-    Logger.info(s"Standardizing column ${inputCol}")
+    Logger.info(s"""Standardizing column "${inputCol}"""")
     return new StandardScaler()
       .setWithMean(withMean)
       .setWithStd(withStd)

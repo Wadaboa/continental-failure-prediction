@@ -39,7 +39,6 @@ object ConfusionMatrix {
     val rdd = predictionAndLabels.rdd.map(row => (row.get(0), row.get(1)))
     val metrics = new MulticlassMetrics(rdd)
     val cfm = metrics.confusionMatrix
-    Logger.info(s"Confusion matrix: \n${cfm.toString()}")
     if (cfm.numRows == 1 && cfm.numCols == 1) {
       return (0.0, 0.0, 0.0, cfm(0, 0))
     } else {
@@ -51,37 +50,32 @@ object ConfusionMatrix {
     }
   }
 
-}
-
-object AccuracyByClass {
-
-  def computeAccuracyByClass(
+  /** Computes the precision score */
+  def computePrecision(
       data: DataFrame,
       predictionCol: String,
-      labelCol: String,
-      classString: String
+      labelCol: String
   ): Double = {
-    val x = data.groupBy(labelCol).count()
-    var total: Long = 0
-    x.foreach(r => {
-      var value = r.get(0).toString()
-      var count = r.getAs[Long]("count")
-      if (value == classString) total = count
-    })
+    val (_, fp, _, tp) =
+      computeConfusionMatrix(data, predictionCol, labelCol)
+    val num = tp
+    val den = tp + fp
+    if (den == 0) return num
+    else return num / den
+  }
 
-    val y = data
-      .filter(col(predictionCol) === col(labelCol))
-      .groupBy(predictionCol)
-      .count()
-    var exact: Long = 0
-    y.foreach(r => {
-      var value = r.get(0).toString()
-      var count = r.getAs[Long]("count")
-      if (value == classString) exact = count
-    })
-
-    if (total == 0) return 0
-    else return exact.asInstanceOf[Double] / total.asInstanceOf[Double]
+  /** Computes the recall score */
+  def computeRecall(
+      data: DataFrame,
+      predictionCol: String,
+      labelCol: String
+  ): Double = {
+    val (_, _, fn, tp) =
+      computeConfusionMatrix(data, predictionCol, labelCol)
+    val num = tp
+    val den = tp + fn
+    if (den == 0) return num
+    else return num / den
   }
 
 }

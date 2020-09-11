@@ -1,7 +1,7 @@
 package prediction
 
 import preprocessing.{Dataset}
-import evaluation.MCC
+import evaluation.{MCC, ConfusionMatrix}
 import utils._
 
 import org.apache.spark.sql.DataFrame
@@ -13,7 +13,10 @@ import org.apache.spark.ml.feature.{
 }
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.tuning.{CrossValidator, CrossValidatorModel}
-import org.apache.spark.ml.evaluation.Evaluator
+import org.apache.spark.ml.evaluation.{
+  BinaryClassificationEvaluator,
+  MulticlassClassificationEvaluator
+}
 
 object Predictor {
 
@@ -101,7 +104,13 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
   def paramGrid: Array[ParamMap]
 
   /** Defines the default evaluator */
-  def defaultEvaluator: Evaluator
+  def defaultEvaluator(
+      metric: String = metricName
+  ): MulticlassClassificationEvaluator =
+    return new MulticlassClassificationEvaluator()
+      .setLabelCol(labelCol)
+      .setPredictionCol(predictionCol)
+      .setMetricName(metric)
 
   /** Trains the model */
   def train(assemble: Boolean = true, validate: Boolean = false): Unit = {
@@ -112,7 +121,7 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
       )
       trainedModel = new CrossValidator()
         .setEstimator(pipeline(assemble))
-        .setEvaluator(defaultEvaluator)
+        .setEvaluator(defaultEvaluator())
         .setEstimatorParamMaps(paramGrid)
         .setNumFolds(cvFolds)
         .setParallelism(cvConcurrency)
@@ -134,11 +143,19 @@ abstract class Predictor[T <: PipelineStage](dataset: Dataset) {
   /** Evaluates predictions */
   def evaluate(
       predictions: DataFrame,
-      metricName: String = this.metricName
+      metric: String = metricName
   ): Double = {
-    metricName match {
+    metric match {
       case "mcc" => MCC.computeMccScore(predictions, predictionCol, labelCol)
-      case _     => defaultEvaluator.evaluate(predictions)
+      case "precision" =>
+        ConfusionMatrix.computePrecision(predictions, predictionCol, labelCol)
+      case "recall" =>
+        ConfusionMatrix.computeRecall(predictions, predictionCol, labelCol)
+      case "areaUnderROC" =>
+        new BinaryClassificationEvaluator()
+          .setMetricName(metric)
+          .evaluate(predictions)
+      case _ => defaultEvaluator(metric = metric).evaluate(predictions)
     }
   }
 

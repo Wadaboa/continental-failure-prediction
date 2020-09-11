@@ -29,9 +29,19 @@ object AdultEvaluator {
     else classifier.train(validate = true)
     val predictions = classifier.test()
     predictions.show()
-    var accuracy = classifier.evaluate(predictions, metricName = "accuracy")
-    var mcc = classifier.evaluate(predictions, metricName = "mcc")
+
+    // Compute and print evaluations
+    var accuracy = classifier.evaluate(predictions, metric = "accuracy")
+    var precision = classifier.evaluate(predictions, metric = "precision")
+    var recall = classifier.evaluate(predictions, metric = "recall")
+    var fscore = classifier.evaluate(predictions, metric = "f1")
+    var mcc = classifier.evaluate(predictions, metric = "mcc")
+    var auroc = classifier.evaluate(predictions, metric = "areaUnderROC")
     Logger.info(s"Accuracy score: ${accuracy}")
+    Logger.info(s"Precision score: ${precision}")
+    Logger.info(s"Recall score: ${recall}")
+    Logger.info(s"F1 score: ${fscore}")
+    Logger.info(s"Area under ROC score: ${auroc}")
     Logger.info(s"MCC score: ${mcc}")
 
     // Save the model

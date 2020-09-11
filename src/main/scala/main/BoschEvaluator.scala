@@ -2,7 +2,6 @@ package main
 
 import preprocessing.BoschDataset
 import prediction.{Predictor, Clusterer}
-import evaluation.AccuracyByClass
 import utils._
 
 import org.apache.spark.ml.linalg.DenseMatrix
@@ -99,28 +98,21 @@ object BoschEvaluator {
         var predictions = classifier.test()
         Logger.info(s"Showing cluster #${v} classifier predictions")
         predictions.show()
-        var accuracy = classifier.evaluate(predictions, metricName = "accuracy")
-        var fscore = classifier.evaluate(predictions, metricName = "f1")
-        var mcc = classifier.evaluate(predictions, metricName = "mcc")
-        var auroc =
-          classifier.evaluate(predictions, metricName = "areaUnderRoc")
-        var cfail = AccuracyByClass.computeAccuracyByClass(
-          predictions,
-          "predicted-Response",
-          "Response",
-          "1"
-        )
-        Logger.info(
-          s"Accuracy score for cluster #${v} classifier: ${accuracy}"
-        )
-        Logger.info(s"F1 score for cluster #${v} classifier: ${fscore}")
-        Logger.info(s"MCC score for cluster #${v} classifier: ${mcc}")
-        Logger.info(
-          s"Area under ROC score for cluster #${v} classifier: ${auroc}"
-        )
-        Logger.info(
-          s"Percentage of correctly predicted failures for cluster #${v} classifier: ${cfail}"
-        )
+
+        // Compute and print evaluations
+        var accuracy = classifier.evaluate(predictions, metric = "accuracy")
+        var precision = classifier.evaluate(predictions, metric = "precision")
+        var recall = classifier.evaluate(predictions, metric = "recall")
+        var fscore = classifier.evaluate(predictions, metric = "f1")
+        var mcc = classifier.evaluate(predictions, metric = "mcc")
+        var auroc = classifier.evaluate(predictions, metric = "areaUnderROC")
+        Logger.info(s"Scores for cluster #${v} classifier")
+        Logger.info(s"Accuracy score: ${accuracy}")
+        Logger.info(s"Precision score: ${precision}")
+        Logger.info(s"Recall score: ${recall}")
+        Logger.info(s"F1 score: ${fscore}")
+        Logger.info(s"Area under ROC score: ${auroc}")
+        Logger.info(s"MCC score: ${mcc}")
 
         // Save the classifiers models
         if (!fileExists(classifierModelFile))

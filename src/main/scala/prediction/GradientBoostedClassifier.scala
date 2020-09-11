@@ -4,10 +4,6 @@ import preprocessing.{Dataset}
 import utils._
 
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.ml.evaluation.{
-  Evaluator,
-  MulticlassClassificationEvaluator
-}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.tuning.ParamGridBuilder
 import org.apache.spark.ml.classification.{GBTClassifier => GBT}
@@ -33,13 +29,6 @@ case class GradientBoostedClassifier(dataset: Dataset)
       .addGrid(model.maxDepth, (1 to maxDepth by 5).toArray)
       .addGrid(model.minInstancesPerNode, (1 to minSamplesLeaf by 2).toArray)
       .build()
-  }
-
-  override def defaultEvaluator: Evaluator = {
-    return new MulticlassClassificationEvaluator()
-      .setLabelCol(labelCol)
-      .setPredictionCol(predictionCol)
-      .setMetricName(metricName)
   }
 
 }
