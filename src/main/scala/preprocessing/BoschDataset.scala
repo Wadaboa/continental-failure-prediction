@@ -7,7 +7,7 @@ import org.apache.spark.ml.linalg.DenseMatrix
 
 object BoschDataset extends DatasetProperty {
 
-  override val delimiter = ";"
+  override val delimiter = ","
 
   override def getTargetColumnNames(): Array[String] = {
     return Array("Response")
@@ -17,8 +17,9 @@ object BoschDataset extends DatasetProperty {
 
 case class BoschDataset(
     inputPath: Option[String] = None,
-    inputData: Option[DataFrame] = None
-) extends Dataset(inputPath, inputData) {
+    inputData: Option[DataFrame] = None,
+    cacheData: Boolean = true
+) extends Dataset(inputPath, inputData, cacheData) {
 
   override type T = BoschDataset
 

@@ -56,8 +56,9 @@ object AdultDataset extends DatasetProperty {
 
 case class AdultDataset(
     inputPath: Option[String] = None,
-    inputData: Option[DataFrame] = None
-) extends Dataset(inputPath, inputData) {
+    inputData: Option[DataFrame] = None,
+    cacheData: Boolean = true
+) extends Dataset(inputPath, inputData, cacheData) {
 
   override type T = AdultDataset
 

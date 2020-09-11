@@ -4,6 +4,7 @@ import scala.reflect.ClassTag
 import Numeric.Implicits._
 
 import org.apache.log4j.{Logger => L}
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Row, DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{
   col,
@@ -143,6 +144,9 @@ object Spark {
   /** Retrieves the current SparkSession or it creates one */
   def session: SparkSession =
     SparkSession.builder.appName(APP_NAME).getOrCreate()
+
+  /** Retrieves the current SparkContext */
+  def context: SparkContext = session.sparkContext
 
   /** Stops Spark execution */
   def stop(): Unit = session.stop()

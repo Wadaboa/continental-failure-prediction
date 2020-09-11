@@ -6,6 +6,7 @@ import evaluation.AccuracyByClass
 import utils._
 
 import org.apache.spark.ml.linalg.DenseMatrix
+import org.apache.spark.storage.StorageLevel
 
 object BoschEvaluator {
 
@@ -53,14 +54,25 @@ object BoschEvaluator {
     if (!fileExists(clustererModelFile)) kmeans.save(clustererModelFile)
 
     // Define classifiers based on the clustering output and train them
+    Logger.info(
+      s"Number of partitions for common preprocessed data: ${preprocessed.data.rdd.getNumPartitions})"
+    )
     val splittedData = Utils.splitDataFrame(predictions, kmeans.predictionCol)
     var classifiersPc: Map[Int, DenseMatrix] = Map()
     splittedData.foreach({
       case (v, d) => {
         // Preprocess clustered data for classification
         Logger.info(s"Preprocessing data for cluster #${v}")
-        var newData = preprocessed.data
-          .join(d.select("Id"), Seq("Id"), "inner")
+        Logger.info(
+          s"Number of partitions in predictions for cluster #${v}: ${d.rdd.getNumPartitions}"
+        )
+        var newData =
+          preprocessed.data.join(d.select("Id"), Seq("Id"), "inner")
+        Logger.info(
+          s"Number of partitions in joined data for cluster #${v}: ${newData.rdd.getNumPartitions}"
+        )
+        Logger.info(s"Showing joined data for cluster #${v}")
+        newData.show()
         var (toClassify, pc) = BoschDataset(inputData = Some(newData))
           .preprocessForClassification()
         Logger.info(

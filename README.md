@@ -74,6 +74,7 @@ The following is a description of files/folder which were not mentioned above:
 - `.java-version`: It contains the Java version to be used by [jenv](https://github.com/jenv/jenv), which is a Java environment manager.
 - `.scalafmt.conf`: It contains the version of the [Scalafmt](https://scalameta.org/scalafmt/) Scala code formatter.
 - `.flintrock-config.yaml`: It contains Flintrock's configurations, used in the creation of a new EC2 cluster.
+- `splitter.ipynb`: It contains simple Python code to split the analyzed datasets. 
 
 ## Notes
 * AWS Educate account credentials change after 3 hours (the given session expires). In order to get them again you have to log in to [AWS Educate](https://aws.amazon.com/it/education/awseducate/), click on `AWS Account` and on the orange button labeled as `AWS Educate Starter Account`, which will take you to [Vocareum](https://labs.vocareum.com). On `Vocareum`, you can either go the [AWS Console](https://console.aws.amazon.com/) or copy/paste the session keys (`Account Details` section) into `~/.aws/credentials` (to use [awscli](https://aws.amazon.com/it/cli/)), or in `aws-credentials.env` (for this project).

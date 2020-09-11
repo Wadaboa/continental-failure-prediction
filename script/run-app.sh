@@ -73,7 +73,7 @@ if [[ $DEPLOY_MODE == "remote" ]]; then
 	MASTER="--master spark://${EC2_NAME}:7077"
 	INPUT_PATH="--input-path $S3_BUCKET_LINK/$DATASET"
 	MODEL_FOLDER="--model-folder $S3_BUCKET_LINK/$MODEL"
-	CONFS="--conf spark.executor.cores=3 --conf spark.executor.memory=16g --conf spark.executor.instances=5 --conf spark.driver.cores=3 --conf spark.driver.memory=16g --conf spark.default.parallelism=30 --conf spark.sql.shuffle.partitions=30"
+	CONFS="--conf spark.executor.instances=23 --conf spark.executor.cores=1 --conf spark.executor.memory=4g --conf spark.driver.cores=1 --conf spark.driver.memory=4g --conf spark.default.parallelism=46 --conf spark.sql.shuffle.partitions=46"
 	PARAMS="$MASTER $CONFS $MAIN_CLASS $EC2_HOME/$MAIN_JAR_NAME $INPUT_PATH $MODEL_FOLDER $CLASSIFIER_NAME"
 
 	# Copy the JAR file to the running cluster using Flintrock, if re-compiled

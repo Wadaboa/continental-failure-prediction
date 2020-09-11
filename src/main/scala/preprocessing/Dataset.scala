@@ -6,6 +6,7 @@ import org.apache.spark.sql.{DataFrame, DataFrameReader}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.functions.countDistinct
 import org.apache.spark.ml.linalg.DenseMatrix
+import org.apache.spark.storage.StorageLevel
 
 trait DatasetProperty {
 
@@ -57,6 +58,7 @@ trait DatasetProperty {
       .load(inputPath)
 
     Logger.info(s"Data shape: (${data.count()}, ${data.columns.size})")
+    Logger.info(s"Number of partitions: ${data.rdd.getNumPartitions}")
     return data
   }
 
@@ -81,7 +83,8 @@ object Dataset {
 
 abstract class Dataset(
     inputPath: Option[String] = None,
-    inputData: Option[DataFrame] = None
+    inputData: Option[DataFrame] = None,
+    cacheData: Boolean = true
 ) {
 
   // Define type variables
@@ -104,6 +107,7 @@ abstract class Dataset(
       }
     }
   }
+  if (cacheData) this.cache()
 
   /** Returns the DataFrame's column names */
   def getColumnNames(): Array[String] = data.columns.toArray
@@ -116,6 +120,9 @@ abstract class Dataset(
 
   /** Shows the DataFrame */
   def show(): Unit = data.show()
+
+  /** Caches the DataFrame in memory */
+  def cache(): Unit = data.persist(StorageLevel.MEMORY_ONLY_SER)
 
   /** Renames the given column */
   def renameColumn(before: String, after: String): Unit = {
