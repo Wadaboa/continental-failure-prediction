@@ -37,7 +37,7 @@ object BoschEvaluator {
     val clustererModelFile = s"${modelFolder.orNull.toString}/bosch-kmeans.ml"
     if (fileExists(clustererModelFile)) kmeans.load(clustererModelFile)
     else {
-      kmeans.numClusters = Some(6)
+      kmeans.maxClusters = 10
       kmeans.train()
     }
     val predictions = kmeans.predict(toCluster.data)

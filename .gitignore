@@ -7,3 +7,4 @@ project/metals.sbt
 *.pem
 *.env
 .vscode/
+src/main/scala/main/Test.scala

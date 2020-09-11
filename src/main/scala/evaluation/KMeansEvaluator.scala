@@ -4,7 +4,7 @@ import preprocessing.Preprocessor
 import utils._
 
 import org.apache.spark.sql.{Dataset, DataFrame}
-import org.apache.spark.sql.functions.rand
+import org.apache.spark.sql.functions.{rand, min, max, col}
 import org.apache.spark.ml.clustering.{KMeans, KMeansModel}
 import org.apache.spark.ml.linalg.{Vector, SparseVector}
 import org.apache.spark.mllib.linalg.{Vectors => OldVectors}
@@ -142,19 +142,31 @@ object EuclideanGap {
       .setDistanceMeasure("euclidean")
       .setFeaturesCol(featuresCol)
       .setPredictionCol(predictionCol)
-    var randomInertiaValues: Array[Double] = Array()
-    for (i <- (1 to numRandom)) {
-      var randomData = getRandomData(data.select(featuresCol), featuresCol)
-      randomData = Preprocessor.assemble(randomData, outputCol = featuresCol)
-      var trainedRandomModel: KMeansModel = randomModel.fit(randomData)
-      var randomPredictions = trainedRandomModel.transform(randomData)
-      var randomInertia = EuclideanInertia.computeInertiaScore(
-        randomPredictions,
-        featuresCol,
-        trainedRandomModel.clusterCenters
-      )
-      randomInertiaValues = randomInertiaValues :+ math.log(randomInertia)
-    }
+
+    val randomInertiaValues = (1 to numRandom).toArray
+      .map { i =>
+        Logger.info(s"Creating random DataFrame #${i}")
+        return Preprocessor.assemble(
+          getRandomData(data, featuresCol),
+          outputCol = featuresCol
+        )
+      }
+      .map { randomData =>
+        Logger.info(s"Processing random DataFrame")
+        val trainedRandomModel: KMeansModel = randomModel.fit(randomData)
+        val randomPredictions = trainedRandomModel.transform(randomData)
+        val randomInertia = EuclideanInertia.computeInertiaScore(
+          randomPredictions,
+          featuresCol,
+          trainedRandomModel.clusterCenters
+        )
+        val randomInertiaLog = math.log(randomInertia)
+        Logger.info(
+          s"Inertia logarithm for random DataFrame: ${randomInertiaLog}"
+        )
+        return randomInertiaLog
+      }
+
     return (
       randomInertiaValues.sum / numRandom.toDouble,
       Utils.stdDev(randomInertiaValues)
@@ -173,14 +185,25 @@ object EuclideanGap {
     */
   def getRandomData(data: DataFrame, featuresCol: String): DataFrame = {
     val newData =
-      Preprocessor.vectorToDataFrame(data, featuresCol, maintainVector = false)
-    val minValues = Utils.rowToArrayOfDouble(newData.groupBy().min().head)
-    val maxValues = Utils.rowToArrayOfDouble(newData.groupBy().max().head)
-    var randomData = newData.select("*")
-    (minValues, maxValues, newData.columns).zipped.foreach { (a, b, c) =>
-      randomData = randomData.withColumn(c, rand() * (b - a) + a)
-    }
-    return randomData
+      Preprocessor.vectorToDataFrame(
+        data.select(featuresCol),
+        featuresCol,
+        maintainVector = false
+      )
+    val minValues = Spark.context.broadcast(
+      newData.select(newData.columns.map(c => min(c).as(c)): _*)
+    )
+    val maxValues = Spark.context.broadcast(
+      newData.select(newData.columns.map(c => max(c).as(c)): _*)
+    )
+    return Preprocessor.applyOverColumns(
+      newData,
+      { c =>
+        val a = minValues.value.select(c).head.getDouble(0)
+        val b = maxValues.value.select(c).head.getDouble(0)
+        rand() * (b - a) + a
+      }
+    )
   }
 
 }

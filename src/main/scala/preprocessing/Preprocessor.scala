@@ -355,20 +355,26 @@ object Preprocessor {
       outputCol: String,
       inputCols: Option[Array[String]] = None
   ): DataFrame = {
-    // format: off
-    Logger.info(
-      s"""Assembling columns ${inputCols.mkString("[", ", ", "]")} into column "${outputCol}""""
-    )
-    // format: on
-
-    var assembler = new VectorAssembler()
     inputCols match {
-      case Some(value) => assembler = assembler.setInputCols(value)
-      case None        => assembler = assembler.setInputCols(data.columns)
+      case Some(value) => {
+        // format: off
+          Logger.info(
+            s"""Assembling columns ${value.mkString("[", ", ", "]")} into column "${outputCol}""""
+          )
+          // format: on
+        return new VectorAssembler()
+          .setInputCols(value)
+          .setOutputCol(outputCol)
+          .transform(data)
+      }
+      case None => {
+        Logger.info(s"""Assembling all columns into column "${outputCol}"""")
+        return new VectorAssembler()
+          .setInputCols(data.columns)
+          .setOutputCol(outputCol)
+          .transform(data)
+      }
     }
-    return assembler
-      .setOutputCol(outputCol)
-      .transform(data)
   }
 
   /** Applies features standardization (zero mean and unit variance) */

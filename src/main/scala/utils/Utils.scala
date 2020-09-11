@@ -148,7 +148,7 @@ object Utils {
       data: DataFrame,
       splitCol: String
   ): Map[Any, DataFrame] = {
-    Logger.info(s"Splitting DataFrame on column ${splitCol}")
+    Logger.info(s"""Splitting DataFrame on column "${splitCol}"""")
     val states = data.select(splitCol).distinct.collect.flatMap(_.toSeq)
     return states
       .map(state => (state -> data.where(col(splitCol) <=> state)))
