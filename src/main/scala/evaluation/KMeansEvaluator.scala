@@ -156,7 +156,7 @@ object EuclideanGap {
         )
       }
       .map {
-        case (randomData, i) =>
+        case (i, randomData) =>
           Logger.info(s"Processing random DataFrame #${i}")
           val randomInertiaLog = computeInertiaLog(
             randomData,
@@ -192,7 +192,7 @@ object EuclideanGap {
       model: KMeans
   ): Double = {
     val trainedModel: KMeansModel = model.fit(data)
-    val predictions = trainedRandomModel.transform(data)
+    val predictions = trainedModel.transform(data)
     val inertia = EuclideanInertia.computeInertiaScore(
       predictions,
       featuresCol,

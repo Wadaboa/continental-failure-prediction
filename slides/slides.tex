@@ -95,6 +95,7 @@ Numbers={OldStyle}]{Fira Sans Light}
 \newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@}
 \makeatother
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Document %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
@@ -131,12 +132,10 @@ Numbers={OldStyle}]{Fira Sans Light}
 	\maketitle
 \end{frame}
 
-\begin{frame}[allowframebreaks]
+\begin{frame}
   \frametitle{Table of contents}
   \setbeamertemplate{section in toc}[ball]
-  \tableofcontents[sections={1-3}, hideallsubsections]
-    \framebreak
-  \tableofcontents[sections={4-6}, hideallsubsections]
+  \tableofcontents
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -185,7 +184,7 @@ Numbers={OldStyle}]{Fira Sans Light}
 \section{Preprocessing}
 \begin{frame}
   \frametitle{Data exploration}
-  \begin{itemize}[<+->]
+  \begin{itemize}
     \item The Bosch dataset includes 3 subsets: numerical, categorical and time data.
     \item As stated in \cite{predict-failures}, categorical data is extremely sparse, and thus not exploited in subsequent stages.
     \item Our first analysis will be focused on just \textbf{numerical data}:
@@ -235,7 +234,7 @@ Numbers={OldStyle}]{Fira Sans Light}
       \item \textbf{Problem}: Automatically select the right amount of clusters:
       \begin{itemize}
         \item \textit{Silhouette} and \textit{elbow} methods are not ideal, since they require human analysis.
-        \item<.-> Spark 3.0.0 dropped support for \textit{inertia} computation, maintaining only evaluation by silhouette scores.
+        \item<.-> \texttt{Spark 3.0.0} dropped support for \textit{inertia} computation, maintaining only evaluation by silhouette scores.
       \end{itemize} 
       \item \textbf{Solution}: Ad-hoc implementation of the \textit{Gap statistic} method, described in \cite{gap}.
     \end{itemize}
@@ -260,8 +259,8 @@ Numbers={OldStyle}]{Fira Sans Light}
       \item \textbf{Implemented models}: Decision Tree, \textbf{Random Forest} and Gradient Boosted Tree.
       \item \textbf{Training strategy}: Hyper-parameters selected by cross-validation on a parameter grid, mainly consisting of the following:
       \begin{itemize}
-        \item Maximum \textit{depth} of each tree, ranging from 1 to 30 with step 5.
-        \item<.-> Minimum \textit{number of instances} each child must have after split, ranging from 1 to 10 with step 2. 
+        \item<.> Maximum \textit{depth} of each tree, ranging from 1 to 30 with step 5.
+        \item<.> Minimum \textit{number of instances} each child must have after split, ranging from 1 to 10 with step 2. 
       \end{itemize}
     \end{itemize}
 \end{frame}
@@ -271,8 +270,8 @@ Numbers={OldStyle}]{Fira Sans Light}
   Different evaluation strategies, based on a custom \textit{confusion matrix} computation:
     \begin{itemize}[<+->]
       \item \textbf{Accuracy}: $\frac{TP + TN}{TP + FP + FN + TN}$ (not well-suited to the Bosch dataset, given its high class imbalance).
-      \item \textbf{$F_{1}$-score}: $2\times\frac{PPV \times TPR}{PPV + TPR}$, where $PPV = \frac{TP}{TP + FP}$ and $TPR = \frac{TP}{TP + FN}$.
-      \item \textbf{Area under ROC}: The two-dimensional area underneath the entire ROC curve ($TPR$/$FPR$ at varying thresholds) from $(0,0)$ to $(1,1)$, where $FPR = \frac{FP}{FP + TN}$.
+      \item \textbf{$F_{1}$-score}: $2\times\frac{p \times r}{p+ r}$, where $p = \frac{TP}{TP + FP}$ and $r = \frac{TP}{TP + FN}$.
+      \item \textbf{Area under ROC}: The two-dimensional area underneath the entire ROC curve, from $(0,0)$ to $(1,1)$.
       \item \textbf{Matthew's Correlation Coefficient (MCC)}: $\frac{TP \times TN - FP \times FN}{\sqrt{(TP + FP) \times (TP + FN) \times (TN + FP) \times (TN + FN)}}$. 
     \end{itemize}
 \end{frame}
@@ -283,26 +282,26 @@ Numbers={OldStyle}]{Fira Sans Light}
   \frametitle{Cloud issues}
   \begin{itemize}[<+->]
     \item \texttt{Spark 3.0.0} is not yet available on the AWS \texttt{EMR} service (the last version that can be used is \texttt{2.4.4}).
-    \item Spark 3.0.0 could be manually installed to \texttt{EC2} clusters, but the \texttt{Flintrock} service already provides some shortcuts to create the desidered clusters and automatically install the selected Spark/Hadoop version.
-    \item Unfortunately, Flintrock was not tested with Spark 3.0.0, which in some installations relies on \texttt{Java 11} (as opposed to Spark 2.4.4 which simply uses \texttt{Java 8}).
+    \item \texttt{Spark 3.0.0} could be manually installed to \texttt{EC2} clusters, but the \texttt{Flintrock} service already provides some shortcuts to create the desidered clusters and automatically install the selected Spark/Hadoop version.
+    \item Unfortunately, \texttt{Flintrock} was not tested with the latest Spark version: this led to lots of trials and errors.
   \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Machines}
-  \begin{itemize}[<+->]
+  \begin{itemize}
     \item \textbf{Local}:
     \begin{itemize}
-      \item<.-> \textbf{Type}: Macbook Pro 16-inch 2019
-      \item<.-> \textbf{CPU}: 2.3 Ghz 8-Core Intel Core i9
-      \item<.-> \textbf{RAM}: 16 GB 2667 MHz DDR4
+      \item \textbf{Type}: Macbook Pro 16-inch 2019
+      \item \textbf{CPU}: 2.3 Ghz 8-Core Intel Core i9
+      \item \textbf{RAM}: 16 GB 2667 MHz DDR4
     \end{itemize}
     \item \textbf{Cloud}: 
       \begin{itemize}
-        \item<.-> \textbf{Type}: \texttt{t2.2xlarge}
-        \item<.-> \textbf{Workers}: 3
-        \item<.-> \textbf{Total \#cores}: 24
-        \item<.-> \textbf{Total RAM}: 91.2 GB
+        \item \textbf{Type}: \texttt{t2.2xlarge}
+        \item \textbf{Workers}: 3
+        \item \textbf{Total \#cores}: 24
+        \item \textbf{Total RAM}: 91.2 GB
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -312,14 +311,14 @@ Numbers={OldStyle}]{Fira Sans Light}
 \begin{frame}
   \frametitle{Data \texttt{bosch-less-less}}
   \begin{itemize}
-    \item Number of examples (random subset): \num{11432}
-    \item Number of features (random subset): $50$
-    \item Percentage of failures: $0.0056\%$
-    \item Identified number of clusters: $8$
-    \item Random Forest model with/without cross-validation:
+    \item Number of \textit{examples} (random subset): \num{11432}
+    \item Number of \textit{features} (random subset): $50$
+    \item Percentage of \textit{failures}: $0.0056\%$
+    \item Identified number of \textit{clusters}: $8$
+    \item \textbf{Random Forest} model with/without cross-validation:
       \begin{itemize}
-        \item Accuracy/F1 score/Area under ROC: Almost $1.0$ for each classifier
-        \item MCC score/Percentage of correctly predicted failures: Around $0.0$ on every classifier (near random prediction)
+        \item \textbf{Accuracy}/\textbf{$F_{1}$-score}/\textbf{Area under ROC}: Almost $1.0$ for each classifier
+        \item \textbf{MCC score}: Around $0.0$ on every classifier (near random prediction)
       \end{itemize}
   \end{itemize}
 \end{frame}
@@ -327,15 +326,37 @@ Numbers={OldStyle}]{Fira Sans Light}
 \begin{frame}
   \frametitle{Data \texttt{bosch-less}}
   \begin{itemize}
-    \item Number of examples: \num{13758}
-    \item Number of features: $968$
-    \item Percentage of failures: $50\%$
-    \item Number of clusters: $6$
-    \item Random Forest model with cross-validation:
+    \item Number of \textit{examples}: \num{13758}
+    \item Number of \textit{features}: $968$
+    \item Percentage of \textit{failures}: $50\%$
+    \item Number of \textit{clusters}: $6$
+    \item \textbf{Random Forest} model with cross-validation:
       \begin{itemize}
-        \item Accuracy/F1 score/Area under ROC: Almost $1.0$ for each classifier
-        \item MCC score/Percentage of correctly predicted failures: Around $0.0$ on every classifier (near random prediction)
+        \item \textbf{Accuracy}: Mean of $0.74$, maximum at $0.92$ for cluster \#1, minimum at $0.56$ for cluster \#5
+        \item \textbf{$F_{1}$-score}: Mean of $0.73$, maximum at $0.92$ for cluster \#1, minimum at $0.55$ for cluster \#5
+        \item \textbf{Area under ROC}: Mean of $0.77$, maximum at $0.96$ for cluster \#1, minimum at $0.58$ for cluster \#5
+        \item \textbf{MCC score}: Mean of $0.47$, maximum at $0.83$ for cluster \#1, minimum at $0.13$ for cluster \#5
       \end{itemize}
+  \end{itemize}
+\end{frame} 
+
+% Conclusions section
+\section{Conclusions}
+\begin{frame}
+  \frametitle{What I learned}
+  \begin{itemize}
+    \item A good Spark configuration is key to the success of the project: in \cite{spark-conf}, they provide a spreadsheet which gives the best configuration values for your setup. 
+    \item A wise management of Spark operations on RDDs/DataFrames is also of great importance.
+    \item Mind your instances execution on AWS to avoid unpleasant surprises on your credit balance.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Up next}
+  \begin{itemize}
+    \item Try to get good results on the whole \texttt{bosch} dataset.
+    \item Implement a distributed feature augmentation method, like \texttt{SMOTE} (Synthetic Minority Oversampling TEchnique).
+    \item Refactor the \textit{Gap statistic} method to be more efficient.
   \end{itemize}
 \end{frame}
 
