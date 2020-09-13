@@ -146,25 +146,28 @@ object EuclideanGap {
     val randomInertiaValues = (1 to numRandom).toArray
       .map { i =>
         Logger.info(s"Creating random DataFrame #${i}")
-        return Preprocessor.assemble(
-          getRandomData(data, featuresCol),
-          outputCol = featuresCol
+
+        (
+          i,
+          Preprocessor.assemble(
+            getRandomData(data, featuresCol),
+            outputCol = featuresCol
+          )
         )
       }
-      .map { randomData =>
-        Logger.info(s"Processing random DataFrame")
-        val trainedRandomModel: KMeansModel = randomModel.fit(randomData)
-        val randomPredictions = trainedRandomModel.transform(randomData)
-        val randomInertia = EuclideanInertia.computeInertiaScore(
-          randomPredictions,
-          featuresCol,
-          trainedRandomModel.clusterCenters
-        )
-        val randomInertiaLog = math.log(randomInertia)
-        Logger.info(
-          s"Inertia logarithm for random DataFrame: ${randomInertiaLog}"
-        )
-        return randomInertiaLog
+      .map {
+        case (randomData, i) =>
+          Logger.info(s"Processing random DataFrame #${i}")
+          val randomInertiaLog = computeInertiaLog(
+            randomData,
+            featuresCol,
+            randomModel
+          )
+          Logger.info(
+            s"Inertia logarithm for random DataFrame #${i}: ${randomInertiaLog}"
+          )
+
+          randomInertiaLog
       }
 
     return (
@@ -178,6 +181,24 @@ object EuclideanGap {
     */
   def computeGapDeviation(standardDeviation: Double, numRandom: Int): Double = {
     return standardDeviation * math.sqrt(1.0 + (1.0 / numRandom.toDouble))
+  }
+
+  /** Computes the inertia score from predictions returned by a KMeans model,
+    * trained on the given random DataFrame
+    */
+  def computeInertiaLog(
+      data: DataFrame,
+      featuresCol: String,
+      model: KMeans
+  ): Double = {
+    val trainedModel: KMeansModel = model.fit(data)
+    val predictions = trainedRandomModel.transform(data)
+    val inertia = EuclideanInertia.computeInertiaScore(
+      predictions,
+      featuresCol,
+      trainedModel.clusterCenters
+    )
+    return math.log(inertia)
   }
 
   /** Generates random data in a uniform distribution, based on

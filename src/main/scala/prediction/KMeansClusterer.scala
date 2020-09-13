@@ -74,7 +74,7 @@ case class KMeansClusterer(dataset: Dataset) extends Clusterer(dataset) {
     numClusters match {
       case Some(k) => {
         model = getNewModel(k)
-        return super.train()
+        super.train()
       }
       case _ => {
         findNumClusters()

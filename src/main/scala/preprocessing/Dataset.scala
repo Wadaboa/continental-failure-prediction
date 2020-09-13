@@ -33,7 +33,7 @@ trait DatasetProperty {
   /** Returns the dataset schema */
   def getSchema(): Option[StructType] = {
     getSchemaString() match {
-      case Some(schemaString) => return Some(StructType.fromDDL(schemaString))
+      case Some(schemaString) => Some(StructType.fromDDL(schemaString))
       case None               => None
     }
   }

@@ -18,11 +18,8 @@ object MCC {
       ConfusionMatrix.computeConfusionMatrix(data, predictionCol, labelCol)
     val num = (tp * tn - fp * fn)
     val den = math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-    if (den == 0) {
-      return num
-    } else {
-      return num / den
-    }
+    if (den == 0) return num
+    else return num / den
   }
 
 }
