@@ -130,10 +130,11 @@ object Preprocessor {
     Logger.info(
       s"""Dropping rows containing the value "${value}" in at least one column"""
     )
-    val df = data.columns.map(c => {
-      data.filter(col(c) !== value)
-    })
-    return df.reduceRight(_ intersect _)
+    return data.columns
+      .map(c => {
+        data.filter(col(c) !== value)
+      })
+      .reduceRight(_ intersect _)
   }
 
   /** Substitutes values matching the given one to null values in the DataFrame */
@@ -155,17 +156,13 @@ object Preprocessor {
       s"Applying ${method} feature imputation, excluding columns " +
         s"${exclude.mkString("[", ", ", "]")}"
     )
-    val cols = data.columns.filterNot(c => exclude.contains(c))
-    val mappedCols = cols.map(c => s"T${c}")
+    val inputCols = data.columns.filterNot(c => exclude.contains(c))
     val imputer = new Imputer()
-      .setInputCols(cols)
-      .setOutputCols(mappedCols)
+      .setInputCols(inputCols)
+      .setOutputCols(inputCols)
       .setStrategy(method)
-    var fittedData = imputer.fit(data).transform(data)
-    (cols, mappedCols).zipped.foreach { (c, mc) =>
-      fittedData = fittedData.drop(c).withColumnRenamed(mc, c)
-    }
-    return fittedData
+
+    imputer.fit(data).transform(data)
   }
 
   /** Trims column names and DataFrame values */
@@ -213,7 +210,6 @@ object Preprocessor {
       explainedVariance > 0 && explainedVariance <= 1,
       "Invalid value for the explainedVariance parameter."
     )
-
     Logger.info(s"Performing Principal Components Analysis")
 
     // Assemble input features into a single vector
@@ -244,8 +240,10 @@ object Preprocessor {
     // Get the components accounting for the given explained variance
     val variances =
       Utils.take(fittedModel.explainedVariance.toArray, explainedVariance)
-    var numComponents = variances.length
-    if (numComponents == 0) numComponents = maxComp
+    val numComponents = variances.length match {
+      case 0 => maxComp
+      case _ => variances.length
+    }
     Logger.info(
       s"The number of principal components explaining ${explainedVariance * 100}% of the variance is ${numComponents}"
     )
@@ -274,7 +272,7 @@ object Preprocessor {
       s"""Converting vector column "${vectorCol}" to single columns"""
     )
     val size = data.select(vectorCol).first.getAs[Vector](0).size
-    var exprs =
+    val exprs =
       (0 until size).map(i => col("_tmp_vec").getItem(i).alias(s"f$i"))
     val newData = data
       .select(vector_to_array(col(vectorCol)).alias("_tmp_vec"))

@@ -40,13 +40,10 @@ trait DatasetProperty {
 
   /** Loads the dataset */
   def load(inputPath: String): DataFrame = {
-    // Prepare the DataFrameReader
-    var reader: DataFrameReader = Spark.session.read
-
     // Check if a schema is provided (otherwise try to infer it)
-    getSchema() match {
-      case Some(schema) => reader = reader.schema(schema)
-      case None         => reader = reader.option("inferSchema", "true")
+    val reader: DataFrameReader = getSchema() match {
+      case Some(schema) => Spark.session.read.schema(schema)
+      case None         => Spark.session.read.option("inferSchema", "true")
     }
 
     // Load the dataset

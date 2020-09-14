@@ -31,12 +31,12 @@ object AdultEvaluator {
     predictions.show()
 
     // Compute and print evaluations
-    var accuracy = classifier.evaluate(predictions, metric = "accuracy")
-    var precision = classifier.evaluate(predictions, metric = "precision")
-    var recall = classifier.evaluate(predictions, metric = "recall")
-    var fscore = classifier.evaluate(predictions, metric = "f1")
-    var mcc = classifier.evaluate(predictions, metric = "mcc")
-    var auroc = classifier.evaluate(predictions, metric = "areaUnderROC")
+    val accuracy = classifier.evaluate(predictions, metric = "accuracy")
+    val precision = classifier.evaluate(predictions, metric = "precision")
+    val recall = classifier.evaluate(predictions, metric = "recall")
+    val fscore = classifier.evaluate(predictions, metric = "f1")
+    val mcc = classifier.evaluate(predictions, metric = "mcc")
+    val auroc = classifier.evaluate(predictions, metric = "areaUnderROC")
     Logger.info(s"Accuracy score: ${accuracy}")
     Logger.info(s"Precision score: ${precision}")
     Logger.info(s"Recall score: ${recall}")
